@@ -1,21 +1,18 @@
 "use client"
 
-import { Home, FileText, LogOut, User } from 'lucide-react'
+import { Home, FileText, Map, Users, User } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
-  SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { Button } from "@/components/ui/button"
 
 const menuItems = [
   {
@@ -29,6 +26,16 @@ const menuItems = [
     icon: FileText,
   },
   {
+    title: "Nearby Incident Map",
+    url: "/dashboard/nearby-incidents",
+    icon: Map,
+  },
+  {
+    title: "Community",
+    url: "/dashboard/community",
+    icon: Users,
+  },
+  {
     title: "Profile",
     url: "/dashboard/profile",
     icon: User,
@@ -38,18 +45,8 @@ const menuItems = [
 export function DashboardSidebar() {
   const pathname = usePathname()
 
-  const handleLogout = () => {
-    localStorage.removeItem('user')
-    window.location.href = '/login'
-  }
-
   return (
     <Sidebar>
-      <SidebarHeader>
-        <div className="px-4 py-2">
-          <h2 className="text-lg font-semibold">Dashboard</h2>
-        </div>
-      </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
@@ -69,20 +66,6 @@ export function DashboardSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <Button 
-              variant="ghost" 
-              className="w-full justify-start" 
-              onClick={handleLogout}
-            >
-              <LogOut className="mr-2 h-4 w-4" />
-              Logout
-            </Button>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
     </Sidebar>
   )
 }

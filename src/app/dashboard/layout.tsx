@@ -1,8 +1,11 @@
 "use client"
 
+import type React from "react"
+
 import { useEffect, useState } from "react"
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { DashboardSidebar } from "../components/dashboard-sidebar"
+import { DashboardHeader } from "../components/dashboard-header"
 
 export default function DashboardLayout({
   children,
@@ -12,9 +15,9 @@ export default function DashboardLayout({
   const [user, setUser] = useState<any>(null)
 
   useEffect(() => {
-    const userData = localStorage.getItem('user')
+    const userData = localStorage.getItem("user")
     if (!userData) {
-      window.location.href = '/login'
+      window.location.href = "/login"
       return
     }
     setUser(JSON.parse(userData))
@@ -27,10 +30,9 @@ export default function DashboardLayout({
   return (
     <SidebarProvider>
       <DashboardSidebar />
+      <DashboardHeader />
       <SidebarInset>
-        <div className="p-6">
-          {children}
-        </div>
+        <div className="p-6">{children}</div>
       </SidebarInset>
     </SidebarProvider>
   )
