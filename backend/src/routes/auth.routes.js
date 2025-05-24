@@ -12,6 +12,21 @@ router.post(
   authController.register
 );
 
+// User login (CNIC-based)
+router.post(
+  '/login/user',
+  validator.validateRequest(validator.userLoginValidator),
+  authController.login
+);
+
+// Admin login (Email-based)
+router.post(
+  '/login/admin',
+  validator.validateRequest(validator.adminLoginValidator),
+  authController.login
+);
+
+// Legacy login endpoint (supports both methods)
 router.post(
   '/login',
   validator.validateRequest(validator.loginValidator),
@@ -48,6 +63,14 @@ router.put(
   auth.updateLastActive,
   upload.uploadSingle('profilePicture'),
   authController.uploadProfilePicture
+);
+
+router.put(
+  '/fcm-token',
+  auth.protect,
+  auth.updateLastActive,
+  validator.validateRequest(validator.fcmTokenValidator),
+  authController.updateFcmToken
 );
 
 module.exports = router; 

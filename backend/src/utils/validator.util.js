@@ -5,6 +5,11 @@ const Joi = require('joi');
  */
 exports.registerValidator = Joi.object({
   name: Joi.string().trim().min(3).max(50).required(),
+  cnic: Joi.string().trim().pattern(/^[0-9]{13}$/).when('role', {
+    is: 'user',
+    then: Joi.required(),
+    otherwise: Joi.optional()
+  }),
   email: Joi.string().email().required(),
   password: Joi.string().min(6).max(30).required(),
   confirmPassword: Joi.string().valid(Joi.ref('password')).required(),
@@ -14,11 +19,36 @@ exports.registerValidator = Joi.object({
 });
 
 /**
- * User login validation
+ * User login validation (using CNIC)
  */
-exports.loginValidator = Joi.object({
+exports.userLoginValidator = Joi.object({
+  cnic: Joi.string().trim().pattern(/^[0-9]{13}$/).required(),
+  password: Joi.string().required(),
+  fcmToken: Joi.string().allow('', null),
+});
+
+/**
+ * Admin/Authority login validation (using email)
+ */
+exports.adminLoginValidator = Joi.object({
   email: Joi.string().email().required(),
   password: Joi.string().required(),
+  fcmToken: Joi.string().allow('', null),
+});
+
+/**
+ * Legacy login validator (kept for backward compatibility)
+ */
+exports.loginValidator = Joi.alternatives().try(
+  exports.userLoginValidator,
+  exports.adminLoginValidator
+);
+
+/**
+ * Update FCM token validation
+ */
+exports.fcmTokenValidator = Joi.object({
+  fcmToken: Joi.string().required(),
 });
 
 /**

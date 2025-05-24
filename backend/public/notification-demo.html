@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EcoTracker - Push Notification Demo</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #f8f9fa;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .container {
+      max-width: 800px;
+      margin-top: 50px;
+    }
+    .card {
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    .card-header {
+      background-color: #198754;
+      color: white;
+      border-radius: 10px 10px 0 0 !important;
+    }
+    .btn-success {
+      background-color: #198754;
+    }
+    .notification-card {
+      background-color: #f1f8ff;
+      border-left: 4px solid #0d6efd;
+      margin-bottom: 10px;
+      padding: 15px;
+      border-radius: 5px;
+    }
+    .notification-title {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    .notification-body {
+      color: #555;
+    }
+    .notification-time {
+      font-size: 0.8rem;
+      color: #777;
+      text-align: right;
+    }
+    #status-container {
+      margin-bottom: 20px;
+    }
+    #token-display {
+      word-break: break-all;
+      background-color: #f0f0f0;
+      padding: 10px;
+      border-radius: 5px;
+      font-family: monospace;
+      font-size: 0.8rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <div class="card-header">
+        <h2 class="mb-0">EcoTracker Push Notification Demo</h2>
+      </div>
+      <div class="card-body">
+        <div id="status-container" class="alert alert-info">
+          <p id="status-message">Initializing push notification system...</p>
+        </div>
+        
+        <div class="mb-4">
+          <h4>FCM Token</h4>
+          <div id="token-display">No token available yet</div>
+          <div class="mt-2">
+            <button id="copy-token" class="btn btn-sm btn-secondary" disabled>Copy Token</button>
+          </div>
+        </div>
+        
+        <div class="mb-4">
+          <h4>Actions</h4>
+          <div class="d-grid gap-2 d-md-block">
+            <button id="request-permission" class="btn btn-success">Request Notification Permission</button>
+            <button id="send-test" class="btn btn-primary" disabled>Send Test Notification</button>
+          </div>
+        </div>
+        
+        <div class="mb-4">
+          <h4>Received Notifications</h4>
+          <div id="notifications-container">
+            <p class="text-muted">No notifications received yet</p>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer text-muted">
+        <p>This demo page helps you test push notifications in the EcoTracker application.</p>
+        <p>Make sure you have set up Firebase Cloud Messaging correctly.</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <!-- Firebase App (the core Firebase SDK) -->
+  <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+  <!-- Firebase Messaging -->
+  <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-messaging-compat.js"></script>
+
+  <script>
+    // Replace with your Firebase configuration
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_AUTH_DOMAIN",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_STORAGE_BUCKET",
+      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    
+    // DOM elements
+    const statusMessage = document.getElementById('status-message');
+    const tokenDisplay = document.getElementById('token-display');
+    const requestPermissionBtn = document.getElementById('request-permission');
+    const sendTestBtn = document.getElementById('send-test');
+    const copyTokenBtn = document.getElementById('copy-token');
+    const notificationsContainer = document.getElementById('notifications-container');
+    
+    // Variables
+    let messaging;
+    let currentToken = null;
+    let authToken = null;
+    
+    // Check if Firebase Messaging is supported
+    if (firebase.messaging.isSupported()) {
+      messaging = firebase.messaging();
+      statusMessage.textContent = 'Firebase Messaging is supported. Ready to request permission.';
+      
+      // Handle incoming messages when app is in foreground
+      messaging.onMessage((payload) => {
+        console.log('Message received:', payload);
+        displayNotification(payload.notification);
+        
+        // Show browser notification as well
+        const notification = new Notification(payload.notification.title, {
+          body: payload.notification.body,
+          icon: '/favicon.ico'
+        });
+      });
+    } else {
+      statusMessage.textContent = 'Firebase Messaging is not supported in this browser.';
+      document.getElementById('status-container').classList.replace('alert-info', 'alert-danger');
+      requestPermissionBtn.disabled = true;
+    }
+    
+    // Event listeners
+    requestPermissionBtn.addEventListener('click', requestPermission);
+    sendTestBtn.addEventListener('click', sendTestNotification);
+    copyTokenBtn.addEventListener('click', copyTokenToClipboard);
+    
+    // Check if user is already logged in
+    checkAuthToken();
+    
+    // Functions
+    function checkAuthToken() {
+      authToken = localStorage.getItem('token');
+      if (authToken) {
+        statusMessage.textContent = 'User is logged in. You can request notification permission.';
+      } else {
+        statusMessage.textContent = 'User is not logged in. Please log in to test notifications.';
+        document.getElementById('status-container').classList.replace('alert-info', 'alert-warning');
+      }
+    }
+    
+    async function requestPermission() {
+      try {
+        statusMessage.textContent = 'Requesting notification permission...';
+        
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+          statusMessage.textContent = 'Notification permission granted!';
+          document.getElementById('status-container').classList.replace('alert-info', 'alert-success');
+          
+          // Get FCM token
+          getToken();
+        } else {
+          statusMessage.textContent = 'Notification permission denied.';
+          document.getElementById('status-container').classList.replace('alert-info', 'alert-warning');
+        }
+      } catch (error) {
+        console.error('Error requesting permission:', error);
+        statusMessage.textContent = `Error requesting permission: ${error.message}`;
+        document.getElementById('status-container').classList.replace('alert-info', 'alert-danger');
+      }
+    }
+    
+    async function getToken() {
+      try {
+        currentToken = await messaging.getToken({
+          vapidKey: 'YOUR_VAPID_KEY'
+        });
+        
+        if (currentToken) {
+          console.log('FCM token:', currentToken);
+          tokenDisplay.textContent = currentToken;
+          copyTokenBtn.disabled = false;
+          sendTestBtn.disabled = false;
+          
+          // Send token to server
+          if (authToken) {
+            updateTokenOnServer(currentToken);
+          }
+        } else {
+          statusMessage.textContent = 'No registration token available. Request permission to generate one.';
+        }
+      } catch (error) {
+        console.error('Error getting token:', error);
+        statusMessage.textContent = `Error getting FCM token: ${error.message}`;
+        document.getElementById('status-container').classList.replace('alert-success', 'alert-danger');
+      }
+    }
+    
+    async function updateTokenOnServer(token) {
+      try {
+        const response = await fetch('/api/auth/fcm-token', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
+          },
+          body: JSON.stringify({ fcmToken: token })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+          console.log('Token updated on server');
+        } else {
+          console.error('Failed to update token on server:', data.message);
+        }
+      } catch (error) {
+        console.error('Error updating token on server:', error);
+      }
+    }
+    
+    async function sendTestNotification() {
+      if (!authToken) {
+        alert('You need to be logged in to send test notifications');
+        return;
+      }
+      
+      try {
+        statusMessage.textContent = 'Sending test notification...';
+        
+        const response = await fetch('/api/notifications/test', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
+          }
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+          statusMessage.textContent = 'Test notification sent successfully!';
+        } else {
+          statusMessage.textContent = `Failed to send test notification: ${data.message}`;
+          document.getElementById('status-container').classList.replace('alert-success', 'alert-danger');
+        }
+      } catch (error) {
+        console.error('Error sending test notification:', error);
+        statusMessage.textContent = `Error sending test notification: ${error.message}`;
+        document.getElementById('status-container').classList.replace('alert-success', 'alert-danger');
+      }
+    }
+    
+    function copyTokenToClipboard() {
+      if (currentToken) {
+        navigator.clipboard.writeText(currentToken)
+          .then(() => {
+            copyTokenBtn.textContent = 'Copied!';
+            setTimeout(() => {
+              copyTokenBtn.textContent = 'Copy Token';
+            }, 2000);
+          })
+          .catch(err => {
+            console.error('Failed to copy token:', err);
+          });
+      }
+    }
+    
+    function displayNotification(notification) {
+      // Remove "no notifications" message if it exists
+      const noNotificationsMsg = notificationsContainer.querySelector('.text-muted');
+      if (noNotificationsMsg) {
+        notificationsContainer.removeChild(noNotificationsMsg);
+      }
+      
+      // Create notification card
+      const card = document.createElement('div');
+      card.className = 'notification-card';
+      
+      const title = document.createElement('div');
+      title.className = 'notification-title';
+      title.textContent = notification.title;
+      
+      const body = document.createElement('div');
+      body.className = 'notification-body';
+      body.textContent = notification.body;
+      
+      const time = document.createElement('div');
+      time.className = 'notification-time';
+      time.textContent = new Date().toLocaleTimeString();
+      
+      card.appendChild(title);
+      card.appendChild(body);
+      card.appendChild(time);
+      
+      // Add to container
+      notificationsContainer.prepend(card);
+    }
+  </script>
+</body>
+</html> 

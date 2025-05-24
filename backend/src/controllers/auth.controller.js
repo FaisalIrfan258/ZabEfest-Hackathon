@@ -8,7 +8,7 @@ const { token } = require('../utils');
  */
 exports.register = async (req, res, next) => {
   try {
-    const { name, email, password, role, location, bio } = req.body;
+    const { name, email, password, role, location, bio, cnic } = req.body;
 
     // Check if user with email already exists
     const existingUser = await User.findOne({ email });
@@ -19,6 +19,25 @@ exports.register = async (req, res, next) => {
       });
     }
 
+    // If registering as a regular user, check CNIC
+    if (role !== 'admin' && role !== 'authority') {
+      if (!cnic) {
+        return res.status(400).json({
+          success: false,
+          message: 'CNIC is required for user registration',
+        });
+      }
+      
+      // Check if user with CNIC already exists
+      const existingCnic = await User.findOne({ cnic });
+      if (existingCnic) {
+        return res.status(400).json({
+          success: false,
+          message: 'User already exists with this CNIC',
+        });
+      }
+    }
+
     // Create new user
     const user = await User.create({
       name,
@@ -27,6 +46,8 @@ exports.register = async (req, res, next) => {
       role: role === 'authority' ? 'authority' : 'user', // Only allow 'user' or 'authority'
       location,
       bio,
+      cnic,
+      fcmToken: req.body.fcmToken || null,
     });
 
     // Generate JWT
@@ -53,14 +74,32 @@ exports.register = async (req, res, next) => {
  */
 exports.login = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    const { email, cnic, password, fcmToken } = req.body;
+    let user;
 
-    // Check if user exists
-    const user = await User.findOne({ email }).select('+password');
-    if (!user) {
-      return res.status(401).json({
+    // Check if login is using CNIC (for regular users)
+    if (cnic) {
+      user = await User.findOne({ cnic }).select('+password');
+      if (!user) {
+        return res.status(401).json({
+          success: false,
+          message: 'Invalid credentials',
+        });
+      }
+    }
+    // Check if login is using email (for admins/authority)
+    else if (email) {
+      user = await User.findOne({ email }).select('+password');
+      if (!user) {
+        return res.status(401).json({
+          success: false,
+          message: 'Invalid credentials',
+        });
+      }
+    } else {
+      return res.status(400).json({
         success: false,
-        message: 'Invalid credentials',
+        message: 'Please provide email or CNIC',
       });
     }
 
@@ -81,12 +120,17 @@ exports.login = async (req, res, next) => {
       });
     }
 
-    // Generate JWT
-    const jwt = token.generateToken(user);
+    // Update FCM token if provided
+    if (fcmToken) {
+      user.fcmToken = fcmToken;
+    }
 
     // Update last active
     user.lastActive = Date.now();
     await user.save({ validateBeforeSave: false });
+
+    // Generate JWT
+    const jwt = token.generateToken(user);
 
     // Return response
     res.status(200).json({
@@ -215,6 +259,34 @@ exports.uploadProfilePicture = async (req, res, next) => {
       success: true,
       message: 'Profile picture updated successfully',
       data: user.getPublicProfile(),
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Update FCM token
+ * @route   PUT /api/auth/fcm-token
+ * @access  Private
+ */
+exports.updateFcmToken = async (req, res, next) => {
+  try {
+    const { fcmToken } = req.body;
+
+    // Update user's FCM token
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { fcmToken },
+      { new: true, runValidators: true }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: 'FCM token updated successfully',
+      data: {
+        fcmToken: user.fcmToken
+      }
     });
   } catch (error) {
     next(error);

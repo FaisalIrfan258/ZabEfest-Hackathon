@@ -8,6 +8,22 @@ const userSchema = new mongoose.Schema(
       required: [true, 'Name is required'],
       trim: true,
     },
+    cnic: {
+      type: String,
+      trim: true,
+      validate: {
+        validator: function(v) {
+          // Only required for regular users, not for admins/authority
+          if (this.role === 'user') {
+            return v && v.length > 0;
+          }
+          return true;
+        },
+        message: 'CNIC is required for users'
+      },
+      unique: true,
+      sparse: true, // Allow null/undefined values (for admins) without unique index conflicts
+    },
     email: {
       type: String,
       required: [true, 'Email is required'],
@@ -66,6 +82,10 @@ const userSchema = new mongoose.Schema(
     lastActive: {
       type: Date,
       default: Date.now,
+    },
+    fcmToken: {
+      type: String,
+      default: null,
     },
   },
   { timestamps: true }
