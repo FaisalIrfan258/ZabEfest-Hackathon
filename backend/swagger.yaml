@@ -143,13 +143,13 @@ components:
       properties:
         _id:
           type: string
-          description: 'Incident ID'
+          example: 60d21b4667d0d8992e610c85
         title:
           type: string
-          description: 'Incident title'
+          example: 'Illegal Waste Dumping'
         description:
           type: string
-          description: 'Detailed description'
+          example: 'Large amounts of plastic waste being dumped in the river.'
         category:
           type: string
           enum:
@@ -162,7 +162,7 @@ components:
             - habitat_destruction
             - soil_contamination
             - other
-          description: 'Type of environmental issue'
+          example: waste_dumping
         severity:
           type: string
           enum:
@@ -170,24 +170,32 @@ components:
             - medium
             - high
             - critical
-          description: 'Severity level'
+          example: high
         location:
           type: object
           properties:
             address:
               type: string
+              example: '123 River Road, Karachi'
             coordinates:
               type: array
               items:
                 type: number
+              example:
+                - 67.0011
+                - 24.8607
             neighborhood:
               type: string
+              example: Saddar
             city:
               type: string
+              example: Karachi
             state:
               type: string
+              example: Sindh
             country:
               type: string
+              example: Pakistan
         images:
           type: array
           items:
@@ -195,22 +203,19 @@ components:
             properties:
               url:
                 type: string
+                example: 'https://example.com/image.jpg'
               publicId:
                 type: string
+                example: eco-tracker/incidents/abc123
               caption:
                 type: string
+                example: 'Waste piled up near the river bank'
         reporter:
-          type: object
-          properties:
-            _id:
-              type: string
-            name:
-              type: string
-            profilePicture:
-              type: string
+          type: string
+          example: 60d21b4667d0d8992e610c85
         isAnonymous:
           type: boolean
-          description: 'Whether report is anonymous'
+          example: false
         status:
           type: string
           enum:
@@ -219,7 +224,7 @@ components:
             - in_progress
             - resolved
             - rejected
-          description: 'Current status of the incident'
+          example: reported
         statusHistory:
           type: array
           items:
@@ -233,55 +238,84 @@ components:
                   - in_progress
                   - resolved
                   - rejected
+                example: reported
               changedBy:
                 type: string
+                example: 60d21b4667d0d8992e610c85
               note:
                 type: string
+                example: 'Incident reported'
               timestamp:
                 type: string
                 format: date-time
+                example: '2023-05-01T12:00:00Z'
         verifiedBy:
           type: array
           items:
             type: object
             properties:
               user:
-                type: object
-                properties:
-                  _id: {type: string}
-                  name: {type: string}
-                  profilePicture: {type: string}
+                type: string
+                example: 60d21b4667d0d8992e610c85
               timestamp:
                 type: string
                 format: date-time
+                example: '2023-05-01T12:00:00Z'
               comment:
                 type: string
+                example: 'I''ve seen this issue and can confirm it''s a problem'
+        assignedTo:
+          type: string
+          example: 60d21b4667d0d8992e610c85
         verificationCount:
           type: integer
-          description: 'Number of verifications'
+          example: 3
         followers:
           type: array
           items:
             type: string
-          description: 'User IDs following this incident'
-        assignedTo:
+          example:
+            - 60d21b4667d0d8992e610c85
+            - 60d21b4667d0d8992e610c86
+        comments:
+          type: array
+          items:
+            type: string
+          example:
+            - 60d21b4667d0d8992e610c85
+            - 60d21b4667d0d8992e610c86
+        resolutionDetails:
           type: object
           properties:
-            _id:
+            resolvedBy:
               type: string
-            name:
+              example: 60d21b4667d0d8992e610c85
+            resolutionDate:
               type: string
-            profilePicture:
+              format: date-time
+              example: '2023-05-15T12:00:00Z'
+            resolutionDescription:
               type: string
-          description: 'User assigned to handle the incident'
+              example: 'Area cleaned and waste removed'
+            resolutionImages:
+              type: array
+              items:
+                type: object
+                properties:
+                  url: {type: string, example: 'https://example.com/resolution.jpg'}
+                  publicId: {type: string, example: eco-tracker/resolutions/abc123}
+                  caption: {type: string, example: 'Area after cleanup'}
+        environmentalScore:
+          type: number
+          example: 75
         createdAt:
           type: string
           format: date-time
-          description: 'When the incident was reported'
+          example: '2023-05-01T12:00:00Z'
         updatedAt:
           type: string
           format: date-time
-          description: 'When the incident was last updated'
+          example: '2023-05-01T12:00:00Z'
     Comment:
       type: object
       properties:
@@ -709,6 +743,250 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        '401':
+          description: 'Not authorized'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: 'Register a new user'
+      description: 'Create a new user account with name, email, password, and CNIC (for regular users)'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - email
+                - password
+                - confirmPassword
+              properties:
+                name:
+                  type: string
+                  description: 'User''s full name'
+                  example: 'John Doe'
+                email:
+                  type: string
+                  format: email
+                  description: 'User''s email address'
+                  example: john@example.com
+                cnic:
+                  type: string
+                  description: 'User''s CNIC number (required for regular users, not for admins/authority)'
+                  example: '1234567890123'
+                password:
+                  type: string
+                  format: password
+                  description: 'User''s password'
+                  example: password123
+                confirmPassword:
+                  type: string
+                  format: password
+                  description: 'Confirm password'
+                  example: password123
+                role:
+                  type: string
+                  enum: [user, authority]
+                  description: 'User role (defaults to ''user'')'
+                  example: user
+                location:
+                  type: string
+                  description: 'User''s location'
+                  example: 'Karachi, Pakistan'
+                bio:
+                  type: string
+                  description: 'User''s bio'
+                  example: 'Environmental enthusiast'
+                fcmToken:
+                  type: string
+                  description: 'Firebase Cloud Messaging token for push notifications'
+                  example: fcm-token-123456
+      responses:
+        '201':
+          description: 'User registered successfully'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean, example: true}
+                  message: {type: string, example: 'User registered successfully'}
+                  data: {type: object, properties: {user: {$ref: '#/components/schemas/User'}, token: {type: string, example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...}}}
+        '400':
+          description: 'Bad request'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: 'Login user (supports both CNIC and email)'
+      description: 'Login with either CNIC (for users) or email (for admins/authority)'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                -
+                  type: object
+                  required: [cnic, password]
+                  properties: {cnic: {type: string, description: 'User''s CNIC number', example: '1234567890123'}, password: {type: string, format: password, description: 'User''s password', example: password123}, fcmToken: {type: string, description: 'Firebase Cloud Messaging token for push notifications', example: fcm-token-123456}}
+                -
+                  type: object
+                  required: [email, password]
+                  properties: {email: {type: string, format: email, description: 'User''s email address', example: admin@example.com}, password: {type: string, format: password, description: 'User''s password', example: password123}, fcmToken: {type: string, description: 'Firebase Cloud Messaging token for push notifications', example: fcm-token-123456}}
+      responses:
+        '200':
+          description: 'User logged in successfully'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean, example: true}
+                  message: {type: string, example: 'User logged in successfully'}
+                  data: {type: object, properties: {user: {$ref: '#/components/schemas/User'}, token: {type: string, example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...}}}
+        '401':
+          description: 'Invalid credentials'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/auth/login/user:
+    post:
+      tags:
+        - Authentication
+      summary: 'Login user with CNIC'
+      description: 'Login with CNIC for regular users'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - cnic
+                - password
+              properties:
+                cnic:
+                  type: string
+                  description: 'User''s CNIC number'
+                  example: '1234567890123'
+                password:
+                  type: string
+                  format: password
+                  description: 'User''s password'
+                  example: password123
+                fcmToken:
+                  type: string
+                  description: 'Firebase Cloud Messaging token for push notifications'
+                  example: fcm-token-123456
+      responses:
+        '200':
+          description: 'User logged in successfully'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean, example: true}
+                  message: {type: string, example: 'User logged in successfully'}
+                  data: {type: object, properties: {user: {$ref: '#/components/schemas/User'}, token: {type: string, example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...}}}
+        '401':
+          description: 'Invalid credentials'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/auth/login/admin:
+    post:
+      tags:
+        - Authentication
+      summary: 'Login admin with email'
+      description: 'Login with email for admins/authority'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: 'Admin''s email address'
+                  example: admin@example.com
+                password:
+                  type: string
+                  format: password
+                  description: 'Admin''s password'
+                  example: password123
+                fcmToken:
+                  type: string
+                  description: 'Firebase Cloud Messaging token for push notifications'
+                  example: fcm-token-123456
+      responses:
+        '200':
+          description: 'Admin logged in successfully'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean, example: true}
+                  message: {type: string, example: 'User logged in successfully'}
+                  data: {type: object, properties: {user: {$ref: '#/components/schemas/User'}, token: {type: string, example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...}}}
+        '401':
+          description: 'Invalid credentials'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/auth/fcm-token:
+    put:
+      tags:
+        - Authentication
+      summary: 'Update FCM token'
+      description: 'Update the Firebase Cloud Messaging token for push notifications'
+      security:
+        -
+          bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - fcmToken
+              properties:
+                fcmToken:
+                  type: string
+                  description: 'Firebase Cloud Messaging token'
+                  example: fcm-token-123456
+      responses:
+        '200':
+          description: 'FCM token updated successfully'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean, example: true}
+                  message: {type: string, example: 'FCM token updated successfully'}
+                  data: {type: object, properties: {fcmToken: {type: string, example: fcm-token-123456}}}
         '401':
           description: 'Not authorized'
           content:

@@ -1,6 +1,6 @@
 {
   "paths": {
-    "/incidents": {
+    "/api/incidents": {
       "get": {
         "tags": ["Incidents"],
         "summary": "Get all incidents with filtering",
@@ -143,7 +143,7 @@
         "description": "Create a new environmental incident report with optional images",
         "security": [
           {
-            "BearerAuth": []
+            "bearerAuth": []
           }
         ],
         "requestBody": {
@@ -268,7 +268,7 @@
         }
       }
     },
-    "/incidents/{id}": {
+    "/api/incidents/{id}": {
       "get": {
         "tags": ["Incidents"],
         "summary": "Get a specific incident",
@@ -317,25 +317,115 @@
         }
       }
     },
-    "/incidents/{id}/verify": {
+    "/api/incidents/{id}/status": {
       "put": {
         "tags": ["Incidents"],
-        "summary": "Verify an incident",
-        "description": "Add verification to an incident report",
+        "summary": "Update incident status",
+        "description": "Update the status of an incident (sends notification to reporter)",
         "security": [
           {
-            "BearerAuth": []
+            "bearerAuth": []
           }
         ],
         "parameters": [
           {
-            "in": "path",
             "name": "id",
+            "in": "path",
             "required": true,
+            "description": "Incident ID",
             "schema": {
               "type": "string"
-            },
-            "description": "Incident ID"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["status"],
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": ["reported", "verified", "in_progress", "resolved", "rejected"],
+                    "example": "in_progress"
+                  },
+                  "note": {
+                    "type": "string",
+                    "example": "Authority team dispatched to address the issue"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Incident status updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Incident status updated to in_progress"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Incident"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Incident not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/incidents/{id}/verify": {
+      "put": {
+        "tags": ["Incidents"],
+        "summary": "Verify incident",
+        "description": "Verify an incident (sends notification to reporter)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Incident ID",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
@@ -347,7 +437,7 @@
                 "properties": {
                   "comment": {
                     "type": "string",
-                    "example": "I can confirm this is happening. I saw it yesterday as well."
+                    "example": "I've seen this issue and can confirm it's a problem"
                   }
                 }
               }
@@ -379,11 +469,85 @@
             }
           },
           "400": {
-            "description": "Already verified or validation error",
+            "description": "Already verified",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Incident not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/incidents/{id}/follow": {
+      "put": {
+        "tags": ["Incidents"],
+        "summary": "Follow/unfollow incident",
+        "description": "Follow or unfollow an incident to receive notifications",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Incident ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Incident followed/unfollowed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Incident followed successfully"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "following": {
+                          "type": "boolean",
+                          "example": true
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -419,49 +583,65 @@
         "properties": {
           "_id": {
             "type": "string",
-            "description": "Incident ID"
+            "example": "60d21b4667d0d8992e610c85"
           },
           "title": {
             "type": "string",
-            "description": "Incident title"
+            "example": "Illegal Waste Dumping"
           },
           "description": {
             "type": "string",
-            "description": "Detailed description"
+            "example": "Large amounts of plastic waste being dumped in the river."
           },
           "category": {
             "type": "string",
-            "enum": ["waste_dumping", "water_pollution", "air_pollution", "deforestation", "noise_pollution", "wildlife_endangerment", "habitat_destruction", "soil_contamination", "other"],
-            "description": "Type of environmental issue"
+            "enum": [
+              "waste_dumping",
+              "water_pollution",
+              "air_pollution",
+              "deforestation",
+              "noise_pollution",
+              "wildlife_endangerment",
+              "habitat_destruction",
+              "soil_contamination",
+              "other"
+            ],
+            "example": "waste_dumping"
           },
           "severity": {
             "type": "string",
             "enum": ["low", "medium", "high", "critical"],
-            "description": "Severity level"
+            "example": "high"
           },
           "location": {
             "type": "object",
             "properties": {
               "address": {
-                "type": "string"
+                "type": "string",
+                "example": "123 River Road, Karachi"
               },
               "coordinates": {
                 "type": "array",
                 "items": {
                   "type": "number"
-                }
+                },
+                "example": [67.0011, 24.8607]
               },
               "neighborhood": {
-                "type": "string"
+                "type": "string",
+                "example": "Saddar"
               },
               "city": {
-                "type": "string"
+                "type": "string",
+                "example": "Karachi"
               },
               "state": {
-                "type": "string"
+                "type": "string",
+                "example": "Sindh"
               },
               "country": {
-                "type": "string"
+                "type": "string",
+                "example": "Pakistan"
               }
             }
           },
@@ -471,39 +651,32 @@
               "type": "object",
               "properties": {
                 "url": {
-                  "type": "string"
+                  "type": "string",
+                  "example": "https://example.com/image.jpg"
                 },
                 "publicId": {
-                  "type": "string"
+                  "type": "string",
+                  "example": "eco-tracker/incidents/abc123"
                 },
                 "caption": {
-                  "type": "string"
+                  "type": "string",
+                  "example": "Waste piled up near the river bank"
                 }
               }
             }
           },
           "reporter": {
-            "type": "object",
-            "properties": {
-              "_id": {
-                "type": "string"
-              },
-              "name": {
-                "type": "string"
-              },
-              "profilePicture": {
-                "type": "string"
-              }
-            }
+            "type": "string",
+            "example": "60d21b4667d0d8992e610c85"
           },
           "isAnonymous": {
             "type": "boolean",
-            "description": "Whether report is anonymous"
+            "example": false
           },
           "status": {
             "type": "string",
             "enum": ["reported", "verified", "in_progress", "resolved", "rejected"],
-            "description": "Current status of the incident"
+            "example": "reported"
           },
           "statusHistory": {
             "type": "array",
@@ -512,17 +685,21 @@
               "properties": {
                 "status": {
                   "type": "string",
-                  "enum": ["reported", "verified", "in_progress", "resolved", "rejected"]
+                  "enum": ["reported", "verified", "in_progress", "resolved", "rejected"],
+                  "example": "reported"
                 },
                 "changedBy": {
-                  "type": "string"
+                  "type": "string",
+                  "example": "60d21b4667d0d8992e610c85"
                 },
                 "note": {
-                  "type": "string"
+                  "type": "string",
+                  "example": "Incident reported"
                 },
                 "timestamp": {
                   "type": "string",
-                  "format": "date-time"
+                  "format": "date-time",
+                  "example": "2023-05-01T12:00:00Z"
                 }
               }
             }
@@ -533,64 +710,107 @@
               "type": "object",
               "properties": {
                 "user": {
-                  "type": "object",
-                  "properties": {
-                    "_id": {
-                      "type": "string"
-                    },
-                    "name": {
-                      "type": "string"
-                    },
-                    "profilePicture": {
-                      "type": "string"
-                    }
-                  }
+                  "type": "string",
+                  "example": "60d21b4667d0d8992e610c85"
                 },
                 "timestamp": {
                   "type": "string",
-                  "format": "date-time"
+                  "format": "date-time",
+                  "example": "2023-05-01T12:00:00Z"
                 },
                 "comment": {
-                  "type": "string"
+                  "type": "string",
+                  "example": "I've seen this issue and can confirm it's a problem"
                 }
               }
             }
           },
+          "assignedTo": {
+            "type": "string",
+            "example": "60d21b4667d0d8992e610c85"
+          },
           "verificationCount": {
             "type": "integer",
-            "description": "Number of verifications"
+            "example": 3
           },
           "followers": {
             "type": "array",
             "items": {
               "type": "string"
             },
-            "description": "User IDs following this incident"
+            "example": ["60d21b4667d0d8992e610c85", "60d21b4667d0d8992e610c86"]
           },
-          "assignedTo": {
+          "comments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": ["60d21b4667d0d8992e610c85", "60d21b4667d0d8992e610c86"]
+          },
+          "resolutionDetails": {
             "type": "object",
             "properties": {
-              "_id": {
-                "type": "string"
+              "resolvedBy": {
+                "type": "string",
+                "example": "60d21b4667d0d8992e610c85"
               },
-              "name": {
-                "type": "string"
+              "resolutionDate": {
+                "type": "string",
+                "format": "date-time",
+                "example": "2023-05-15T12:00:00Z"
               },
-              "profilePicture": {
-                "type": "string"
+              "resolutionDescription": {
+                "type": "string",
+                "example": "Area cleaned and waste removed"
+              },
+              "resolutionImages": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "url": {
+                      "type": "string",
+                      "example": "https://example.com/resolution.jpg"
+                    },
+                    "publicId": {
+                      "type": "string",
+                      "example": "eco-tracker/resolutions/abc123"
+                    },
+                    "caption": {
+                      "type": "string",
+                      "example": "Area after cleanup"
+                    }
+                  }
+                }
               }
-            },
-            "description": "User assigned to handle the incident"
+            }
+          },
+          "environmentalScore": {
+            "type": "number",
+            "example": 75
           },
           "createdAt": {
             "type": "string",
             "format": "date-time",
-            "description": "When the incident was reported"
+            "example": "2023-05-01T12:00:00Z"
           },
           "updatedAt": {
             "type": "string",
             "format": "date-time",
-            "description": "When the incident was last updated"
+            "example": "2023-05-01T12:00:00Z"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "message": {
+            "type": "string",
+            "example": "Error message"
           }
         }
       }

@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
+const path = require('path');
 
 // Import routes
 const authRoutes = require('./routes/auth.routes');
@@ -20,10 +21,23 @@ const PORT = process.env.PORT || 5000;
 
 // Middlewares
 app.use(cors());
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'", "https://firebase-project-id.firebaseio.com"],
+    },
+  },
+}));
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Serve static files from public directory
+app.use(express.static(path.join(__dirname, 'public')));
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -39,7 +53,8 @@ app.get('/', (req, res) => {
   res.json({ 
     message: 'Welcome to EcoTracker API',
     status: 'Server is running',
-    documentation: '/api-docs'
+    documentation: '/api-docs',
+    notificationDemo: '/notification-demo.html'
   });
 });
 
@@ -61,6 +76,7 @@ mongoose
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
       console.log(`API Documentation available at http://localhost:${PORT}/api-docs`);
+      console.log(`Notification demo available at http://localhost:${PORT}/notification-demo.html`);
     });
   })
   .catch((err) => {

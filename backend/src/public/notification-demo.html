@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoTracker Web Push Notifications Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 10px 0;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        .notification {
+            background-color: #f8f9fa;
+            border-left: 4px solid #4CAF50;
+            padding: 10px 15px;
+            margin-bottom: 10px;
+        }
+        #notifications {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>EcoTracker Web Push Notifications Demo</h1>
+    
+    <div class="container">
+        <h2>Step 1: Request Notification Permission</h2>
+        <p>Click the button below to request permission to show notifications:</p>
+        <button id="requestPermission">Request Notification Permission</button>
+        <p>Current permission status: <span id="permissionStatus">checking...</span></p>
+    </div>
+    
+    <div class="container">
+        <h2>Step 2: Register for FCM</h2>
+        <p>Once permission is granted, register for Firebase Cloud Messaging:</p>
+        <button id="registerFCM" disabled>Register for FCM</button>
+        <p>FCM Token: <span id="fcmToken">Not registered</span></p>
+        <button id="copyToken" disabled>Copy Token</button>
+    </div>
+    
+    <div class="container">
+        <h2>Step 3: Update Your FCM Token</h2>
+        <p>Send your FCM token to the server when you log in or by using the dedicated endpoint:</p>
+        <pre>PUT /api/auth/fcm-token
+{
+  "fcmToken": "your-fcm-token-here"
+}</pre>
+        <p>This will enable the server to send you notifications about your incidents.</p>
+    </div>
+    
+    <div class="container">
+        <h2>Received Notifications</h2>
+        <div id="notifications"></div>
+    </div>
+
+    <script>
+        // Check notification permission on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            updatePermissionStatus();
+        });
+
+        // Update permission status display
+        function updatePermissionStatus() {
+            const permissionStatus = document.getElementById('permissionStatus');
+            permissionStatus.textContent = Notification.permission;
+            
+            // Enable/disable FCM button based on permission
+            const registerFCMButton = document.getElementById('registerFCM');
+            registerFCMButton.disabled = Notification.permission !== 'granted';
+        }
+
+        // Request notification permission
+        document.getElementById('requestPermission').addEventListener('click', async () => {
+            try {
+                const permission = await Notification.requestPermission();
+                updatePermissionStatus();
+                
+                if (permission === 'granted') {
+                    // Show a test notification
+                    new Notification('EcoTracker Notifications Enabled', {
+                        body: 'You will now receive notifications about your incidents',
+                        icon: '/favicon.ico'
+                    });
+                }
+            } catch (error) {
+                console.error('Error requesting notification permission:', error);
+                alert('Error requesting notification permission: ' + error.message);
+            }
+        });
+
+        // Simulate FCM registration
+        document.getElementById('registerFCM').addEventListener('click', () => {
+            // In a real app, this would use the Firebase JS SDK
+            // For this demo, we'll generate a fake token
+            const mockFcmToken = 'fcm-' + Math.random().toString(36).substring(2, 15) + 
+                Math.random().toString(36).substring(2, 15);
+            
+            document.getElementById('fcmToken').textContent = mockFcmToken;
+            document.getElementById('copyToken').disabled = false;
+            
+            // Add a notification
+            addNotification('FCM Registration', 'Successfully registered for push notifications');
+        });
+
+        // Copy FCM token to clipboard
+        document.getElementById('copyToken').addEventListener('click', () => {
+            const token = document.getElementById('fcmToken').textContent;
+            navigator.clipboard.writeText(token)
+                .then(() => {
+                    alert('Token copied to clipboard!');
+                })
+                .catch(err => {
+                    console.error('Failed to copy token: ', err);
+                    alert('Failed to copy token: ' + err.message);
+                });
+        });
+
+        // Add a notification to the list
+        function addNotification(title, body) {
+            const notifications = document.getElementById('notifications');
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.innerHTML = `
+                <strong>${title}</strong>
+                <p>${body}</p>
+                <small>${new Date().toLocaleTimeString()}</small>
+            `;
+            notifications.prepend(notification);
+        }
+
+        // In a real app, you would set up a Firebase messaging listener like this:
+        /*
+        // Initialize Firebase
+        firebase.initializeApp({
+            apiKey: "your-api-key",
+            authDomain: "your-auth-domain",
+            projectId: "your-project-id",
+            messagingSenderId: "your-sender-id",
+            appId: "your-app-id"
+        });
+
+        // Get Firebase Messaging instance
+        const messaging = firebase.messaging();
+
+        // Request permission and get token
+        messaging.getToken({ vapidKey: 'your-vapid-key' })
+            .then((currentToken) => {
+                if (currentToken) {
+                    // Show token
+                    document.getElementById('fcmToken').textContent = currentToken;
+                    document.getElementById('copyToken').disabled = false;
+                    
+                    // Send token to server
+                    sendTokenToServer(currentToken);
+                } else {
+                    console.log('No registration token available');
+                }
+            })
+            .catch((err) => {
+                console.log('An error occurred while retrieving token. ', err);
+            });
+
+        // Handle incoming messages
+        messaging.onMessage((payload) => {
+            console.log('Message received. ', payload);
+            addNotification(
+                payload.notification.title, 
+                payload.notification.body
+            );
+            
+            // Show notification if app is in foreground
+            new Notification(payload.notification.title, {
+                body: payload.notification.body,
+                icon: '/favicon.ico'
+            });
+        });
+        */
+    </script>
+</body>
+</html> 

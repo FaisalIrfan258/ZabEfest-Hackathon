@@ -1,4 +1,5 @@
 const { Incident, User, Neighborhood } = require('../models');
+const { notification } = require('../utils');
 
 /**
  * @desc    Create new incident
@@ -360,6 +361,9 @@ exports.updateStatus = async (req, res, next) => {
       });
     }
 
+    // Store previous status for notification
+    const previousStatus = incident.status;
+
     // Update status
     incident.status = status;
     incident.statusHistory.push({
@@ -417,6 +421,14 @@ exports.updateStatus = async (req, res, next) => {
     }
 
     await incident.save();
+
+    // Send notification about status change
+    await notification.sendStatusChangeNotification(
+      incident,
+      previousStatus,
+      status,
+      req.user._id
+    );
 
     // Populate response data
     const updatedIncident = await Incident.findById(req.params.id)
@@ -482,8 +494,19 @@ exports.verifyIncident = async (req, res, next) => {
       $inc: { points: 2 },
     });
 
+    // Store current verification count for threshold check
+    const previousVerificationCount = incident.verificationCount;
+
     // Update verification count and check if status should be updated
     await incident.updateVerificationCount();
+
+    // Send notification about new verification
+    await notification.sendVerificationNotification(incident, req.user);
+
+    // If verification threshold was reached, send additional notification
+    if (previousVerificationCount < 3 && incident.verificationCount >= 3) {
+      await notification.sendVerificationThresholdNotification(incident);
+    }
 
     // Populate response data
     const updatedIncident = await Incident.findById(req.params.id)

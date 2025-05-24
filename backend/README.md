@@ -5,12 +5,13 @@ EcoTracker is a community-driven environmental monitoring platform that enables 
 ## Features
 
 ### Core Features
-- **User Authentication**: Secure registration and login system
+- **User Authentication**: Secure registration and login system with CNIC for users and email for admins
 - **Incident Reporting**: Report environmental incidents with details, photos, and location
 - **Interactive Map**: Visualize reported incidents on a map with filtering
 - **User Dashboard**: Track personal contributions and followed reports
 - **Verification System**: Community verification of reported incidents
 - **Status Tracking**: Follow progress from reporting to resolution
+- **Push Notifications**: Receive web notifications for status updates and verifications
 
 ### Advanced Features
 - **Data Analysis**: Environmental statistics and visualization
@@ -27,11 +28,13 @@ EcoTracker is a community-driven environmental monitoring platform that enables 
 - MongoDB with Mongoose
 - JWT Authentication
 - Multer & Cloudinary for file uploads
+- Web Push Notifications
 
 ### Frontend (Not included in this repository)
 - React.js
 - Mapbox/Leaflet for maps
 - Chart.js for data visualization
+- Firebase Cloud Messaging for notifications
 
 ## API Documentation
 
@@ -54,11 +57,14 @@ The Swagger documentation is generated from individual JSON files in the `script
 
 ### Authentication
 - `POST /api/auth/register` - Register a new user
-- `POST /api/auth/login` - Log in a user
+- `POST /api/auth/login` - Log in a user (supports both CNIC and email)
+- `POST /api/auth/login/user` - User login with CNIC
+- `POST /api/auth/login/admin` - Admin login with email
 - `GET /api/auth/me` - Get current user profile
 - `PUT /api/auth/me` - Update user profile
 - `PUT /api/auth/password` - Change password
 - `PUT /api/auth/profile-picture` - Upload profile picture
+- `PUT /api/auth/fcm-token` - Update FCM token for notifications
 
 ### Incidents
 - `GET /api/incidents` - Get all incidents with filtering
@@ -97,6 +103,7 @@ The Swagger documentation is generated from individual JSON files in the `script
 - Node.js (v14 or higher)
 - MongoDB
 - Cloudinary account (optional for production)
+- Firebase project (for push notifications)
 
 ### Installation
 
@@ -121,12 +128,20 @@ The Swagger documentation is generated from individual JSON files in the `script
    CLOUDINARY_CLOUD_NAME=your_cloud_name
    CLOUDINARY_API_KEY=your_api_key
    CLOUDINARY_API_SECRET=your_api_secret
+   
+   # Firebase Configuration (for push notifications)
+   FIREBASE_PROJECT_ID=your_firebase_project_id
+   FIREBASE_CLIENT_EMAIL=your_firebase_client_email
+   FIREBASE_PRIVATE_KEY="your_firebase_private_key_with_newlines"
    ```
 
 4. Start the development server
    ```
    npm run dev
    ```
+
+5. Try the notification demo
+   Open your browser and navigate to `http://localhost:5000/notification-demo.html`
 
 ## License
 This project is licensed under the ISC License. 
