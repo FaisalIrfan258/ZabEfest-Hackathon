@@ -1,0 +1,605 @@
+{
+  "paths": {
+    "/dashboard/user": {
+      "get": {
+        "tags": ["Dashboard"],
+        "summary": "Get user dashboard data",
+        "description": "Retrieve personalized dashboard data for the current user",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User dashboard data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "user": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string"
+                            },
+                            "profilePicture": {
+                              "type": "string"
+                            },
+                            "role": {
+                              "type": "string"
+                            },
+                            "points": {
+                              "type": "integer"
+                            },
+                            "badges": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "joined": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "location": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "stats": {
+                          "type": "object",
+                          "properties": {
+                            "reportedCount": {
+                              "type": "integer"
+                            },
+                            "followedCount": {
+                              "type": "integer"
+                            },
+                            "verifiedCount": {
+                              "type": "integer"
+                            }
+                          }
+                        },
+                        "recentReports": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Incident"
+                          }
+                        },
+                        "recentFollowed": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Incident"
+                          }
+                        },
+                        "upcomingEvents": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Event"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dashboard/admin": {
+      "get": {
+        "tags": ["Dashboard"],
+        "summary": "Get admin dashboard data",
+        "description": "Retrieve administrative dashboard data with platform statistics",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Admin dashboard data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "incidentStats": {
+                          "type": "object",
+                          "properties": {
+                            "reportedCount": {
+                              "type": "integer"
+                            },
+                            "verifiedCount": {
+                              "type": "integer"
+                            },
+                            "inProgressCount": {
+                              "type": "integer"
+                            },
+                            "resolvedCount": {
+                              "type": "integer"
+                            },
+                            "total": {
+                              "type": "integer"
+                            }
+                          }
+                        },
+                        "categoryCounts": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "_id": {
+                                "type": "string"
+                              },
+                              "count": {
+                                "type": "integer"
+                              }
+                            }
+                          }
+                        },
+                        "severityCounts": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "_id": {
+                                "type": "string"
+                              },
+                              "count": {
+                                "type": "integer"
+                              }
+                            }
+                          }
+                        },
+                        "recentIncidents": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Incident"
+                          }
+                        },
+                        "topNeighborhoods": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Neighborhood"
+                          }
+                        },
+                        "userStats": {
+                          "type": "object",
+                          "properties": {
+                            "userCount": {
+                              "type": "integer"
+                            },
+                            "activeUserCount": {
+                              "type": "integer"
+                            }
+                          }
+                        },
+                        "upcomingEvents": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Event"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - not an admin or authority",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dashboard/neighborhoods": {
+      "get": {
+        "tags": ["Dashboard"],
+        "summary": "Get neighborhoods data",
+        "description": "Retrieve list of neighborhoods with environmental scores",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            },
+            "description": "Page number"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            },
+            "description": "Number of items per page"
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "schema": {
+              "type": "string",
+              "default": "environmentalScore"
+            },
+            "description": "Sort field"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of neighborhoods",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "neighborhoods": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Neighborhood"
+                          }
+                        },
+                        "pagination": {
+                          "type": "object",
+                          "properties": {
+                            "page": {
+                              "type": "integer",
+                              "example": 1
+                            },
+                            "limit": {
+                              "type": "integer",
+                              "example": 10
+                            },
+                            "total": {
+                              "type": "integer",
+                              "example": 30
+                            },
+                            "pages": {
+                              "type": "integer",
+                              "example": 3
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dashboard/neighborhoods/{id}": {
+      "get": {
+        "tags": ["Dashboard"],
+        "summary": "Get neighborhood detail",
+        "description": "Retrieve detailed information about a specific neighborhood",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Neighborhood ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Neighborhood details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "neighborhood": {
+                          "$ref": "#/components/schemas/Neighborhood"
+                        },
+                        "incidents": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Incident"
+                          }
+                        },
+                        "categoryDistribution": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "_id": {
+                                "type": "string"
+                              },
+                              "count": {
+                                "type": "integer"
+                              }
+                            }
+                          }
+                        },
+                        "statusDistribution": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "_id": {
+                                "type": "string"
+                              },
+                              "count": {
+                                "type": "integer"
+                              }
+                            }
+                          }
+                        },
+                        "upcomingEvents": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Event"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Neighborhood not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dashboard/stats": {
+      "get": {
+        "tags": ["Dashboard"],
+        "summary": "Get platform statistics",
+        "description": "Retrieve overall platform statistics",
+        "responses": {
+          "200": {
+            "description": "Platform statistics",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "incidents": {
+                          "type": "object",
+                          "properties": {
+                            "total": {
+                              "type": "integer",
+                              "example": 250
+                            },
+                            "resolved": {
+                              "type": "integer",
+                              "example": 120
+                            },
+                            "resolutionRate": {
+                              "type": "number",
+                              "example": 48
+                            }
+                          }
+                        },
+                        "users": {
+                          "type": "object",
+                          "properties": {
+                            "total": {
+                              "type": "integer",
+                              "example": 500
+                            }
+                          }
+                        },
+                        "neighborhoods": {
+                          "type": "object",
+                          "properties": {
+                            "total": {
+                              "type": "integer",
+                              "example": 30
+                            },
+                            "averageScore": {
+                              "type": "number",
+                              "example": 75.5
+                            }
+                          }
+                        },
+                        "events": {
+                          "type": "object",
+                          "properties": {
+                            "total": {
+                              "type": "integer",
+                              "example": 45
+                            },
+                            "upcoming": {
+                              "type": "integer",
+                              "example": 15
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Neighborhood": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string",
+            "description": "Neighborhood ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "Neighborhood name"
+          },
+          "city": {
+            "type": "string",
+            "description": "City"
+          },
+          "state": {
+            "type": "string",
+            "description": "State or province"
+          },
+          "country": {
+            "type": "string",
+            "description": "Country"
+          },
+          "boundaries": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "example": "Polygon"
+              },
+              "coordinates": {
+                "type": "array",
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "GeoJSON polygon of neighborhood boundaries"
+          },
+          "center": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "description": "Center coordinates [longitude, latitude]"
+          },
+          "environmentalScore": {
+            "type": "number",
+            "description": "Overall environmental health score (0-100)"
+          },
+          "scoreBreakdown": {
+            "type": "object",
+            "properties": {
+              "wasteScore": {
+                "type": "number"
+              },
+              "waterScore": {
+                "type": "number"
+              },
+              "airScore": {
+                "type": "number"
+              },
+              "habitatScore": {
+                "type": "number"
+              },
+              "noiseScore": {
+                "type": "number"
+              }
+            },
+            "description": "Breakdown of environmental scores by category"
+          },
+          "activeIncidents": {
+            "type": "integer",
+            "description": "Number of active incidents"
+          },
+          "resolvedIncidents": {
+            "type": "integer",
+            "description": "Number of resolved incidents"
+          },
+          "totalIncidents": {
+            "type": "integer",
+            "description": "Total number of incidents"
+          },
+          "lastUpdated": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the neighborhood data was last updated"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,672 @@
+openapi: 3.0.0
+info:
+  title: 'EcoTracker API'
+  description: 'API for EcoTracker - Community Environmental Reporting Platform'
+  version: 1.0.0
+  contact:
+    email: info@ecotracker.com
+servers:
+  -
+    url: 'http://localhost:5000/api'
+    description: 'Development server'
+  -
+    url: 'https://api.ecotracker.com'
+    description: 'Production server'
+tags:
+  -
+    name: Auth
+    description: 'Authentication endpoints'
+  -
+    name: Incidents
+    description: 'Environmental incident management'
+  -
+    name: Comments
+    description: 'Comments on incidents'
+  -
+    name: Dashboard
+    description: 'Dashboard data and statistics'
+  -
+    name: Events
+    description: 'Community events management'
+  -
+    name: Users
+    description: 'User management (admin only)'
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    User:
+      type: object
+      properties:
+        _id:
+          type: string
+          description: 'User ID'
+        name:
+          type: string
+          description: 'User''s full name'
+        email:
+          type: string
+          format: email
+          description: 'User''s email address'
+        role:
+          type: string
+          enum:
+            - user
+            - admin
+            - authority
+          description: 'User''s role'
+        profilePicture:
+          type: string
+          description: 'URL to profile picture'
+        bio:
+          type: string
+          description: 'User biography'
+        location:
+          type: string
+          description: 'User location'
+        points:
+          type: integer
+          description: 'Gamification points'
+        badges:
+          type: array
+          items:
+            type: string
+          description: 'Earned badges'
+        createdAt:
+          type: string
+          format: date-time
+          description: 'Account creation date'
+        lastActive:
+          type: string
+          format: date-time
+          description: 'Last activity timestamp'
+    Error:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: 'Error message'
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                example: email
+              message:
+                type: string
+                example: 'Email is already in use'
+    Incident:
+      type: object
+      properties:
+        _id:
+          type: string
+          description: 'Incident ID'
+        title:
+          type: string
+          description: 'Incident title'
+        description:
+          type: string
+          description: 'Detailed description'
+        category:
+          type: string
+          enum:
+            - waste_dumping
+            - water_pollution
+            - air_pollution
+            - deforestation
+            - noise_pollution
+            - wildlife_endangerment
+            - habitat_destruction
+            - soil_contamination
+            - other
+          description: 'Type of environmental issue'
+        severity:
+          type: string
+          enum:
+            - low
+            - medium
+            - high
+            - critical
+          description: 'Severity level'
+        location:
+          type: object
+          properties:
+            address:
+              type: string
+            coordinates:
+              type: array
+              items:
+                type: number
+            neighborhood:
+              type: string
+            city:
+              type: string
+            state:
+              type: string
+            country:
+              type: string
+        images:
+          type: array
+          items:
+            type: object
+            properties:
+              url:
+                type: string
+              publicId:
+                type: string
+              caption:
+                type: string
+        reporter:
+          type: object
+          properties:
+            _id:
+              type: string
+            name:
+              type: string
+            profilePicture:
+              type: string
+        isAnonymous:
+          type: boolean
+          description: 'Whether report is anonymous'
+        status:
+          type: string
+          enum:
+            - reported
+            - verified
+            - in_progress
+            - resolved
+            - rejected
+          description: 'Current status of the incident'
+        statusHistory:
+          type: array
+          items:
+            type: object
+            properties:
+              status:
+                type: string
+                enum:
+                  - reported
+                  - verified
+                  - in_progress
+                  - resolved
+                  - rejected
+              changedBy:
+                type: string
+              note:
+                type: string
+              timestamp:
+                type: string
+                format: date-time
+        verifiedBy:
+          type: array
+          items:
+            type: object
+            properties:
+              user:
+                type: object
+                properties:
+                  _id: {type: string}
+                  name: {type: string}
+                  profilePicture: {type: string}
+              timestamp:
+                type: string
+                format: date-time
+              comment:
+                type: string
+        verificationCount:
+          type: integer
+          description: 'Number of verifications'
+        followers:
+          type: array
+          items:
+            type: string
+          description: 'User IDs following this incident'
+        assignedTo:
+          type: object
+          properties:
+            _id:
+              type: string
+            name:
+              type: string
+            profilePicture:
+              type: string
+          description: 'User assigned to handle the incident'
+        createdAt:
+          type: string
+          format: date-time
+          description: 'When the incident was reported'
+        updatedAt:
+          type: string
+          format: date-time
+          description: 'When the incident was last updated'
+paths:
+  /auth/register:
+    post:
+      tags:
+        - Auth
+      summary: 'Register a new user'
+      description: 'Create a new user account with the provided information'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - email
+                - password
+                - confirmPassword
+              properties:
+                name:
+                  type: string
+                  example: 'John Doe'
+                email:
+                  type: string
+                  format: email
+                  example: john@example.com
+                password:
+                  type: string
+                  format: password
+                  example: Password123
+                confirmPassword:
+                  type: string
+                  format: password
+                  example: Password123
+                role:
+                  type: string
+                  enum: [user, authority]
+                  example: user
+                location:
+                  type: string
+                  example: 'New York, NY'
+                bio:
+                  type: string
+                  example: 'Environmental enthusiast'
+      responses:
+        '201':
+          description: 'User registered successfully'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean, example: true}
+                  message: {type: string, example: 'User registered successfully'}
+                  data: {type: object, properties: {user: {$ref: '#/components/schemas/User'}, token: {type: string}}}
+        '400':
+          description: 'Validation error or user already exists'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /auth/login:
+    post:
+      tags:
+        - Auth
+      summary: 'Login user'
+      description: 'Authenticate a user with email and password'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: john@example.com
+                password:
+                  type: string
+                  format: password
+                  example: Password123
+      responses:
+        '200':
+          description: 'Login successful'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean, example: true}
+                  message: {type: string, example: 'User logged in successfully'}
+                  data: {type: object, properties: {user: {$ref: '#/components/schemas/User'}, token: {type: string}}}
+        '401':
+          description: 'Invalid credentials'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /auth/me:
+    get:
+      tags:
+        - Auth
+      summary: 'Get current user profile'
+      description: 'Retrieve the profile of the currently authenticated user'
+      security:
+        -
+          BearerAuth: []
+      responses:
+        '200':
+          description: 'User profile'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean, example: true}
+                  data: {$ref: '#/components/schemas/User'}
+        '401':
+          description: 'Not authorized'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      tags:
+        - Auth
+      summary: 'Update user profile'
+      description: 'Update the profile of the currently authenticated user'
+      security:
+        -
+          BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: 'John Smith'
+                bio:
+                  type: string
+                  example: 'Environmental activist and nature lover'
+                location:
+                  type: string
+                  example: 'San Francisco, CA'
+      responses:
+        '200':
+          description: 'Profile updated successfully'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean, example: true}
+                  message: {type: string, example: 'Profile updated successfully'}
+                  data: {$ref: '#/components/schemas/User'}
+        '400':
+          description: 'Validation error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 'Not authorized'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /incidents:
+    get:
+      tags:
+        - Incidents
+      summary: 'Get all incidents with filtering'
+      description: 'Retrieve a list of incidents with optional filtering parameters'
+      parameters:
+        -
+          in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+          description: 'Page number'
+        -
+          in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+          description: 'Number of items per page'
+        -
+          in: query
+          name: category
+          schema:
+            type: string
+            enum:
+              - waste_dumping
+              - water_pollution
+              - air_pollution
+              - deforestation
+              - noise_pollution
+              - wildlife_endangerment
+              - habitat_destruction
+              - soil_contamination
+              - other
+          description: 'Filter by incident category'
+        -
+          in: query
+          name: status
+          schema:
+            type: string
+            enum:
+              - reported
+              - verified
+              - in_progress
+              - resolved
+              - rejected
+          description: 'Filter by incident status'
+        -
+          in: query
+          name: severity
+          schema:
+            type: string
+            enum:
+              - low
+              - medium
+              - high
+              - critical
+          description: 'Filter by severity level'
+        -
+          in: query
+          name: sort
+          schema:
+            type: string
+            default: '-createdAt'
+          description: 'Sort field (prefix with ''-'' for descending order)'
+        -
+          in: query
+          name: lat
+          schema:
+            type: number
+          description: 'Latitude for location-based search'
+        -
+          in: query
+          name: lng
+          schema:
+            type: number
+          description: 'Longitude for location-based search'
+        -
+          in: query
+          name: distance
+          schema:
+            type: integer
+            default: 10
+          description: 'Search radius in kilometers'
+      responses:
+        '200':
+          description: 'List of incidents'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean, example: true}
+                  data: {type: object, properties: {incidents: {type: array, items: {$ref: '#/components/schemas/Incident'}}, pagination: {type: object, properties: {page: {type: integer, example: 1}, limit: {type: integer, example: 10}, total: {type: integer, example: 50}, pages: {type: integer, example: 5}}}}}
+    post:
+      tags:
+        - Incidents
+      summary: 'Report a new incident'
+      description: 'Create a new environmental incident report with optional images'
+      security:
+        -
+          BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - title
+                - description
+                - category
+                - location
+              properties:
+                title:
+                  type: string
+                  example: 'Illegal waste dumping'
+                description:
+                  type: string
+                  example: 'Large amount of construction waste dumped near the river'
+                category:
+                  type: string
+                  enum: [waste_dumping, water_pollution, air_pollution, deforestation, noise_pollution, wildlife_endangerment, habitat_destruction, soil_contamination, other]
+                  example: waste_dumping
+                severity:
+                  type: string
+                  enum: [low, medium, high, critical]
+                  example: high
+                location:
+                  type: object
+                  required: [address, coordinates]
+                  properties: {address: {type: string, example: '123 River St, Springfield'}, coordinates: {type: array, items: {type: number}, example: [-73.9857, 40.7484]}, neighborhood: {type: string, example: Riverside}, city: {type: string, example: Springfield}, state: {type: string, example: IL}, country: {type: string, example: USA}}
+                isAnonymous:
+                  type: boolean
+                  example: false
+                images:
+                  type: array
+                  items: {type: string, format: binary}
+      responses:
+        '201':
+          description: 'Incident reported successfully'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean, example: true}
+                  message: {type: string, example: 'Incident reported successfully'}
+                  data: {$ref: '#/components/schemas/Incident'}
+        '400':
+          description: 'Validation error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 'Not authorized'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  '/incidents/{id}':
+    get:
+      tags:
+        - Incidents
+      summary: 'Get a specific incident'
+      description: 'Retrieve detailed information about a specific incident'
+      parameters:
+        -
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: 'Incident ID'
+      responses:
+        '200':
+          description: 'Incident details'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean, example: true}
+                  data: {$ref: '#/components/schemas/Incident'}
+        '404':
+          description: 'Incident not found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  '/incidents/{id}/verify':
+    put:
+      tags:
+        - Incidents
+      summary: 'Verify an incident'
+      description: 'Add verification to an incident report'
+      security:
+        -
+          BearerAuth: []
+      parameters:
+        -
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: 'Incident ID'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                comment:
+                  type: string
+                  example: 'I can confirm this is happening. I saw it yesterday as well.'
+      responses:
+        '200':
+          description: 'Incident verified successfully'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean, example: true}
+                  message: {type: string, example: 'Incident verified successfully'}
+                  data: {$ref: '#/components/schemas/Incident'}
+        '400':
+          description: 'Already verified or validation error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 'Not authorized'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 'Incident not found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
