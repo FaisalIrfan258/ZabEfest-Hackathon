@@ -1,6 +1,782 @@
 {
-  "paths": {},
+  "paths": {
+    "/users/profile": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "Get current user profile",
+        "description": "Retrieve profile information for the currently authenticated user",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User profile retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/User"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["Users"],
+        "summary": "Update user profile",
+        "description": "Update profile information for the currently authenticated user",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "Jane Doe"
+                  },
+                  "bio": {
+                    "type": "string",
+                    "example": "Environmental activist and community organizer"
+                  },
+                  "location": {
+                    "type": "string",
+                    "example": "Springfield, IL"
+                  },
+                  "interests": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "example": ["water conservation", "waste management", "habitat restoration"]
+                  },
+                  "phone": {
+                    "type": "string",
+                    "example": "+1234567890"
+                  },
+                  "notificationPreferences": {
+                    "type": "object",
+                    "properties": {
+                      "email": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "push": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "sms": {
+                        "type": "boolean",
+                        "example": false
+                      }
+                    }
+                  },
+                  "profilePicture": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Profile picture image file"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Profile updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Profile updated successfully"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/User"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/change-password": {
+      "put": {
+        "tags": ["Users"],
+        "summary": "Change password",
+        "description": "Change the password for the currently authenticated user",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["currentPassword", "newPassword", "confirmPassword"],
+                "properties": {
+                  "currentPassword": {
+                    "type": "string",
+                    "format": "password",
+                    "example": "OldSecurePassword123!"
+                  },
+                  "newPassword": {
+                    "type": "string",
+                    "format": "password",
+                    "example": "NewSecurePassword456!"
+                  },
+                  "confirmPassword": {
+                    "type": "string",
+                    "format": "password",
+                    "example": "NewSecurePassword456!"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password changed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Password changed successfully"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or passwords don't match",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Current password is incorrect",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/{id}": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "Get user by ID",
+        "description": "Retrieve public profile information for a specific user",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "User ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User profile retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "_id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "profilePicture": {
+                          "type": "string"
+                        },
+                        "bio": {
+                          "type": "string"
+                        },
+                        "location": {
+                          "type": "string"
+                        },
+                        "role": {
+                          "type": "string"
+                        },
+                        "badges": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "points": {
+                          "type": "integer"
+                        },
+                        "joinedDate": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "reportedIncidents": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Incident"
+                          }
+                        },
+                        "organizedEvents": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Event"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/follow-incident/{id}": {
+      "put": {
+        "tags": ["Users"],
+        "summary": "Follow an incident",
+        "description": "Add an incident to the user's followed incidents list",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Incident ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully followed incident",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Incident followed successfully"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "isFollowing": {
+                          "type": "boolean",
+                          "example": true
+                        },
+                        "followersCount": {
+                          "type": "integer",
+                          "example": 15
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Incident not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Users"],
+        "summary": "Unfollow an incident",
+        "description": "Remove an incident from the user's followed incidents list",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Incident ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully unfollowed incident",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Incident unfollowed successfully"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "isFollowing": {
+                          "type": "boolean",
+                          "example": false
+                        },
+                        "followersCount": {
+                          "type": "integer",
+                          "example": 14
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Incident not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/followed-incidents": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "Get followed incidents",
+        "description": "Retrieve all incidents followed by the current user",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            },
+            "description": "Page number"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            },
+            "description": "Number of items per page"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of followed incidents",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "incidents": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Incident"
+                          }
+                        },
+                        "pagination": {
+                          "type": "object",
+                          "properties": {
+                            "page": {
+                              "type": "integer",
+                              "example": 1
+                            },
+                            "limit": {
+                              "type": "integer",
+                              "example": 10
+                            },
+                            "total": {
+                              "type": "integer",
+                              "example": 25
+                            },
+                            "pages": {
+                              "type": "integer",
+                              "example": 3
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/reported-incidents": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "Get reported incidents",
+        "description": "Retrieve all incidents reported by the current user",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            },
+            "description": "Page number"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            },
+            "description": "Number of items per page"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of reported incidents",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "incidents": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Incident"
+                          }
+                        },
+                        "pagination": {
+                          "type": "object",
+                          "properties": {
+                            "page": {
+                              "type": "integer",
+                              "example": 1
+                            },
+                            "limit": {
+                              "type": "integer",
+                              "example": 10
+                            },
+                            "total": {
+                              "type": "integer",
+                              "example": 15
+                            },
+                            "pages": {
+                              "type": "integer",
+                              "example": 2
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
   "components": {
-    "schemas": {}
+    "schemas": {
+      "User": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string",
+            "description": "User ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "User's full name"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "User's email address"
+          },
+          "profilePicture": {
+            "type": "string",
+            "description": "URL to the user's profile picture"
+          },
+          "bio": {
+            "type": "string",
+            "description": "User's biography or description"
+          },
+          "location": {
+            "type": "string",
+            "description": "User's location (city, state, country)"
+          },
+          "role": {
+            "type": "string",
+            "enum": ["user", "authority", "admin"],
+            "description": "User's role in the system"
+          },
+          "phone": {
+            "type": "string",
+            "description": "User's phone number"
+          },
+          "isVerified": {
+            "type": "boolean",
+            "description": "Whether the user's email is verified"
+          },
+          "interests": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "User's environmental interests"
+          },
+          "badges": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Badges earned by the user"
+          },
+          "points": {
+            "type": "integer",
+            "description": "Engagement points earned by the user"
+          },
+          "notificationPreferences": {
+            "type": "object",
+            "properties": {
+              "email": {
+                "type": "boolean"
+              },
+              "push": {
+                "type": "boolean"
+              },
+              "sms": {
+                "type": "boolean"
+              }
+            },
+            "description": "User's notification preferences"
+          },
+          "followedIncidents": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "IDs of incidents followed by the user"
+          },
+          "reportedIncidents": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "IDs of incidents reported by the user"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the user account was created"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the user account was last updated"
+          },
+          "lastLogin": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the user last logged in"
+          }
+        }
+      }
+    }
   }
 }

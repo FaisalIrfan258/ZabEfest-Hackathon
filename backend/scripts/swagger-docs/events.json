@@ -1,6 +1,923 @@
 {
-  "paths": {},
+  "paths": {
+    "/events": {
+      "get": {
+        "tags": ["Events"],
+        "summary": "Get all events",
+        "description": "Retrieve a list of events with optional filtering parameters",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            },
+            "description": "Page number"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            },
+            "description": "Number of items per page"
+          },
+          {
+            "in": "query",
+            "name": "eventType",
+            "schema": {
+              "type": "string",
+              "enum": ["cleanup", "education", "protest", "monitoring", "planting", "other"]
+            },
+            "description": "Filter by event type"
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string",
+              "enum": ["scheduled", "cancelled", "completed"],
+              "default": "scheduled"
+            },
+            "description": "Filter by event status"
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "schema": {
+              "type": "string",
+              "default": "date"
+            },
+            "description": "Sort field"
+          },
+          {
+            "in": "query",
+            "name": "lat",
+            "schema": {
+              "type": "number"
+            },
+            "description": "Latitude for location-based search"
+          },
+          {
+            "in": "query",
+            "name": "lng",
+            "schema": {
+              "type": "number"
+            },
+            "description": "Longitude for location-based search"
+          },
+          {
+            "in": "query",
+            "name": "distance",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            },
+            "description": "Search radius in kilometers"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of events",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "events": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Event"
+                          }
+                        },
+                        "pagination": {
+                          "type": "object",
+                          "properties": {
+                            "page": {
+                              "type": "integer",
+                              "example": 1
+                            },
+                            "limit": {
+                              "type": "integer",
+                              "example": 10
+                            },
+                            "total": {
+                              "type": "integer",
+                              "example": 45
+                            },
+                            "pages": {
+                              "type": "integer",
+                              "example": 5
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Events"],
+        "summary": "Create a new event",
+        "description": "Create a new community environmental event",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["title", "description", "eventType", "date", "startTime", "endTime", "location"],
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "example": "River Cleanup Day"
+                  },
+                  "description": {
+                    "type": "string",
+                    "example": "Join us for a community cleanup of the riverbank"
+                  },
+                  "eventType": {
+                    "type": "string",
+                    "enum": ["cleanup", "education", "protest", "monitoring", "planting", "other"],
+                    "example": "cleanup"
+                  },
+                  "date": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "2023-07-15"
+                  },
+                  "startTime": {
+                    "type": "string",
+                    "example": "09:00"
+                  },
+                  "endTime": {
+                    "type": "string",
+                    "example": "12:00"
+                  },
+                  "location": {
+                    "type": "object",
+                    "properties": {
+                      "address": {
+                        "type": "string",
+                        "example": "123 River St, Springfield"
+                      },
+                      "coordinates": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "example": [-73.9857, 40.7484]
+                      },
+                      "city": {
+                        "type": "string",
+                        "example": "Springfield"
+                      },
+                      "state": {
+                        "type": "string",
+                        "example": "IL"
+                      },
+                      "country": {
+                        "type": "string",
+                        "example": "USA"
+                      }
+                    }
+                  },
+                  "relatedIncident": {
+                    "type": "string",
+                    "example": "60d21b4667d0d8992e610c85",
+                    "description": "ID of related incident (optional)"
+                  },
+                  "maxAttendees": {
+                    "type": "integer",
+                    "example": 50
+                  },
+                  "requirementsList": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "item": {
+                          "type": "string",
+                          "example": "Trash bags"
+                        },
+                        "quantity": {
+                          "type": "integer",
+                          "example": 20
+                        }
+                      }
+                    }
+                  },
+                  "isPublic": {
+                    "type": "boolean",
+                    "default": true
+                  },
+                  "tags": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "example": ["river", "cleanup", "volunteer"]
+                  },
+                  "image": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Event cover image"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Event created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Event created successfully"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Event"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/events/{id}": {
+      "get": {
+        "tags": ["Events"],
+        "summary": "Get a specific event",
+        "description": "Retrieve detailed information about a specific event",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Event ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Event details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Event"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - private event",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Event not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["Events"],
+        "summary": "Update an event",
+        "description": "Update details of an existing event",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Event ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "eventType": {
+                    "type": "string",
+                    "enum": ["cleanup", "education", "protest", "monitoring", "planting", "other"]
+                  },
+                  "date": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "startTime": {
+                    "type": "string"
+                  },
+                  "endTime": {
+                    "type": "string"
+                  },
+                  "location": {
+                    "type": "object",
+                    "properties": {
+                      "address": {
+                        "type": "string"
+                      },
+                      "coordinates": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        }
+                      },
+                      "city": {
+                        "type": "string"
+                      },
+                      "state": {
+                        "type": "string"
+                      },
+                      "country": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "maxAttendees": {
+                    "type": "integer"
+                  },
+                  "requirementsList": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "item": {
+                          "type": "string"
+                        },
+                        "quantity": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  },
+                  "isPublic": {
+                    "type": "boolean"
+                  },
+                  "tags": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Event updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Event updated successfully"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Event"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - not the organizer or admin",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Event not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/events/{id}/register": {
+      "put": {
+        "tags": ["Events"],
+        "summary": "Register for an event",
+        "description": "Register the current user for an event",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Event ID"
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": ["going", "maybe", "not_going"],
+                    "default": "going"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully registered for event",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Successfully registered as going"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "example": "going"
+                        },
+                        "attendeeCount": {
+                          "type": "integer",
+                          "example": 25
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Event is full or validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Event not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/events/{id}/cancel": {
+      "put": {
+        "tags": ["Events"],
+        "summary": "Cancel an event",
+        "description": "Cancel an event (organizer or admin only)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Event ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Event cancelled successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Event cancelled successfully"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Event"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - not the organizer or admin",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Event not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
   "components": {
-    "schemas": {}
+    "schemas": {
+      "Event": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string",
+            "description": "Event ID"
+          },
+          "title": {
+            "type": "string",
+            "description": "Event title"
+          },
+          "description": {
+            "type": "string",
+            "description": "Detailed description"
+          },
+          "eventType": {
+            "type": "string",
+            "enum": ["cleanup", "education", "protest", "monitoring", "planting", "other"],
+            "description": "Type of event"
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "description": "Event date"
+          },
+          "startTime": {
+            "type": "string",
+            "description": "Start time"
+          },
+          "endTime": {
+            "type": "string",
+            "description": "End time"
+          },
+          "location": {
+            "type": "object",
+            "properties": {
+              "address": {
+                "type": "string"
+              },
+              "coordinates": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "city": {
+                "type": "string"
+              },
+              "state": {
+                "type": "string"
+              },
+              "country": {
+                "type": "string"
+              }
+            }
+          },
+          "organizer": {
+            "type": "object",
+            "properties": {
+              "_id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "profilePicture": {
+                "type": "string"
+              }
+            },
+            "description": "User who created the event"
+          },
+          "relatedIncident": {
+            "type": "object",
+            "properties": {
+              "_id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "category": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string"
+              }
+            },
+            "description": "Related incident (if applicable)"
+          },
+          "image": {
+            "type": "object",
+            "properties": {
+              "url": {
+                "type": "string"
+              },
+              "publicId": {
+                "type": "string"
+              }
+            },
+            "description": "Event cover image"
+          },
+          "attendees": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "user": {
+                  "type": "object",
+                  "properties": {
+                    "_id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "profilePicture": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "status": {
+                  "type": "string",
+                  "enum": ["going", "maybe", "not_going"]
+                },
+                "registeredAt": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            },
+            "description": "Event attendees"
+          },
+          "maxAttendees": {
+            "type": "integer",
+            "description": "Maximum number of attendees"
+          },
+          "requirementsList": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "item": {
+                  "type": "string"
+                },
+                "quantity": {
+                  "type": "integer"
+                },
+                "volunteers": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "user": {
+                        "type": "object",
+                        "properties": {
+                          "_id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "quantity": {
+                        "type": "integer"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "description": "List of items needed for the event"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["scheduled", "cancelled", "completed"],
+            "description": "Event status"
+          },
+          "isPublic": {
+            "type": "boolean",
+            "description": "Whether the event is public"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Event tags for categorization"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the event was created"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the event was last updated"
+          },
+          "attendeeCount": {
+            "type": "integer",
+            "description": "Number of confirmed attendees"
+          },
+          "isFull": {
+            "type": "boolean",
+            "description": "Whether the event is at maximum capacity"
+          },
+          "timeUntil": {
+            "type": "number",
+            "description": "Time until event in milliseconds"
+          }
+        }
+      }
+    }
   }
 }

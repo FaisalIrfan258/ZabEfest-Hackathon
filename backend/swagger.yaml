@@ -51,38 +51,73 @@ components:
           type: string
           format: email
           description: 'User''s email address'
+        profilePicture:
+          type: string
+          description: 'URL to the user''s profile picture'
+        bio:
+          type: string
+          description: 'User''s biography or description'
+        location:
+          type: string
+          description: 'User''s location (city, state, country)'
         role:
           type: string
           enum:
             - user
-            - admin
             - authority
-          description: 'User''s role'
-        profilePicture:
+            - admin
+          description: 'User''s role in the system'
+        phone:
           type: string
-          description: 'URL to profile picture'
-        bio:
-          type: string
-          description: 'User biography'
-        location:
-          type: string
-          description: 'User location'
-        points:
-          type: integer
-          description: 'Gamification points'
+          description: 'User''s phone number'
+        isVerified:
+          type: boolean
+          description: 'Whether the user''s email is verified'
+        interests:
+          type: array
+          items:
+            type: string
+          description: 'User''s environmental interests'
         badges:
           type: array
           items:
             type: string
-          description: 'Earned badges'
+          description: 'Badges earned by the user'
+        points:
+          type: integer
+          description: 'Engagement points earned by the user'
+        notificationPreferences:
+          type: object
+          properties:
+            email:
+              type: boolean
+            push:
+              type: boolean
+            sms:
+              type: boolean
+          description: 'User''s notification preferences'
+        followedIncidents:
+          type: array
+          items:
+            type: string
+          description: 'IDs of incidents followed by the user'
+        reportedIncidents:
+          type: array
+          items:
+            type: string
+          description: 'IDs of incidents reported by the user'
         createdAt:
           type: string
           format: date-time
-          description: 'Account creation date'
-        lastActive:
+          description: 'When the user account was created'
+        updatedAt:
           type: string
           format: date-time
-          description: 'Last activity timestamp'
+          description: 'When the user account was last updated'
+        lastLogin:
+          type: string
+          format: date-time
+          description: 'When the user last logged in'
     Error:
       type: object
       properties:
@@ -247,6 +282,265 @@ components:
           type: string
           format: date-time
           description: 'When the incident was last updated'
+    Comment:
+      type: object
+      properties:
+        _id:
+          type: string
+          description: 'Comment ID'
+        content:
+          type: string
+          description: 'Comment content'
+        author:
+          type: object
+          properties:
+            _id:
+              type: string
+            name:
+              type: string
+            profilePicture:
+              type: string
+          description: 'User who created the comment'
+        incident:
+          type: string
+          description: 'ID of the incident this comment belongs to'
+        isAnonymous:
+          type: boolean
+          description: 'Whether the comment was posted anonymously'
+        isDeleted:
+          type: boolean
+          description: 'Whether the comment has been deleted'
+        parentComment:
+          type: string
+          description: 'ID of parent comment if this is a reply'
+        replies:
+          type: array
+          items:
+            $ref: '#/components/schemas/Comment'
+          description: 'Replies to this comment'
+        createdAt:
+          type: string
+          format: date-time
+          description: 'When the comment was created'
+        updatedAt:
+          type: string
+          format: date-time
+          description: 'When the comment was last updated'
+    Neighborhood:
+      type: object
+      properties:
+        _id:
+          type: string
+          description: 'Neighborhood ID'
+        name:
+          type: string
+          description: 'Neighborhood name'
+        city:
+          type: string
+          description: City
+        state:
+          type: string
+          description: 'State or province'
+        country:
+          type: string
+          description: Country
+        boundaries:
+          type: object
+          properties:
+            type:
+              type: string
+              example: Polygon
+            coordinates:
+              type: array
+              items:
+                type: array
+                items:
+                  type: array
+                  items: {type: number}
+          description: 'GeoJSON polygon of neighborhood boundaries'
+        center:
+          type: array
+          items:
+            type: number
+          description: 'Center coordinates [longitude, latitude]'
+        environmentalScore:
+          type: number
+          description: 'Overall environmental health score (0-100)'
+        scoreBreakdown:
+          type: object
+          properties:
+            wasteScore:
+              type: number
+            waterScore:
+              type: number
+            airScore:
+              type: number
+            habitatScore:
+              type: number
+            noiseScore:
+              type: number
+          description: 'Breakdown of environmental scores by category'
+        activeIncidents:
+          type: integer
+          description: 'Number of active incidents'
+        resolvedIncidents:
+          type: integer
+          description: 'Number of resolved incidents'
+        totalIncidents:
+          type: integer
+          description: 'Total number of incidents'
+        lastUpdated:
+          type: string
+          format: date-time
+          description: 'When the neighborhood data was last updated'
+    Event:
+      type: object
+      properties:
+        _id:
+          type: string
+          description: 'Event ID'
+        title:
+          type: string
+          description: 'Event title'
+        description:
+          type: string
+          description: 'Detailed description'
+        eventType:
+          type: string
+          enum:
+            - cleanup
+            - education
+            - protest
+            - monitoring
+            - planting
+            - other
+          description: 'Type of event'
+        date:
+          type: string
+          format: date
+          description: 'Event date'
+        startTime:
+          type: string
+          description: 'Start time'
+        endTime:
+          type: string
+          description: 'End time'
+        location:
+          type: object
+          properties:
+            address:
+              type: string
+            coordinates:
+              type: array
+              items:
+                type: number
+            city:
+              type: string
+            state:
+              type: string
+            country:
+              type: string
+        organizer:
+          type: object
+          properties:
+            _id:
+              type: string
+            name:
+              type: string
+            profilePicture:
+              type: string
+          description: 'User who created the event'
+        relatedIncident:
+          type: object
+          properties:
+            _id:
+              type: string
+            title:
+              type: string
+            category:
+              type: string
+            status:
+              type: string
+          description: 'Related incident (if applicable)'
+        image:
+          type: object
+          properties:
+            url:
+              type: string
+            publicId:
+              type: string
+          description: 'Event cover image'
+        attendees:
+          type: array
+          items:
+            type: object
+            properties:
+              user:
+                type: object
+                properties:
+                  _id: {type: string}
+                  name: {type: string}
+                  profilePicture: {type: string}
+              status:
+                type: string
+                enum:
+                  - going
+                  - maybe
+                  - not_going
+              registeredAt:
+                type: string
+                format: date-time
+          description: 'Event attendees'
+        maxAttendees:
+          type: integer
+          description: 'Maximum number of attendees'
+        requirementsList:
+          type: array
+          items:
+            type: object
+            properties:
+              item:
+                type: string
+              quantity:
+                type: integer
+              volunteers:
+                type: array
+                items:
+                  type: object
+                  properties: {user: {type: object, properties: {_id: {type: string}, name: {type: string}}}, quantity: {type: integer}}
+          description: 'List of items needed for the event'
+        status:
+          type: string
+          enum:
+            - scheduled
+            - cancelled
+            - completed
+          description: 'Event status'
+        isPublic:
+          type: boolean
+          description: 'Whether the event is public'
+        tags:
+          type: array
+          items:
+            type: string
+          description: 'Event tags for categorization'
+        createdAt:
+          type: string
+          format: date-time
+          description: 'When the event was created'
+        updatedAt:
+          type: string
+          format: date-time
+          description: 'When the event was last updated'
+        attendeeCount:
+          type: integer
+          description: 'Number of confirmed attendees'
+        isFull:
+          type: boolean
+          description: 'Whether the event is at maximum capacity'
+        timeUntil:
+          type: number
+          description: 'Time until event in milliseconds'
 paths:
   /auth/register:
     post:
@@ -666,6 +960,1021 @@ paths:
                 $ref: '#/components/schemas/Error'
         '404':
           description: 'Incident not found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /comments:
+    post:
+      tags:
+        - Comments
+      summary: 'Add a comment to an incident'
+      description: 'Create a new comment on an incident'
+      security:
+        -
+          BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - content
+                - incidentId
+              properties:
+                content:
+                  type: string
+                  example: 'This is a serious issue that needs immediate attention.'
+                incidentId:
+                  type: string
+                  example: 60d21b4667d0d8992e610c85
+                isAnonymous:
+                  type: boolean
+                  example: false
+                parentComment:
+                  type: string
+                  example: 60d21b4667d0d8992e610c86
+                  description: 'ID of parent comment if this is a reply'
+      responses:
+        '201':
+          description: 'Comment added successfully'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean, example: true}
+                  message: {type: string, example: 'Comment added successfully'}
+                  data: {$ref: '#/components/schemas/Comment'}
+        '400':
+          description: 'Validation error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 'Not authorized'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 'Incident not found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  '/comments/incident/{incidentId}':
+    get:
+      tags:
+        - Comments
+      summary: 'Get comments for an incident'
+      description: 'Retrieve all comments for a specific incident'
+      parameters:
+        -
+          in: path
+          name: incidentId
+          required: true
+          schema:
+            type: string
+          description: 'ID of the incident'
+        -
+          in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+          description: 'Page number'
+        -
+          in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+          description: 'Number of items per page'
+      responses:
+        '200':
+          description: 'List of comments'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean, example: true}
+                  data: {type: object, properties: {comments: {type: array, items: {$ref: '#/components/schemas/Comment'}}, pagination: {type: object, properties: {page: {type: integer, example: 1}, limit: {type: integer, example: 10}, total: {type: integer, example: 25}, pages: {type: integer, example: 3}}}}}
+        '404':
+          description: 'Incident not found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  '/comments/{id}':
+    delete:
+      tags:
+        - Comments
+      summary: 'Delete a comment'
+      description: 'Soft delete a comment (only visible to the comment author or admin)'
+      security:
+        -
+          BearerAuth: []
+      parameters:
+        -
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: 'Comment ID'
+      responses:
+        '200':
+          description: 'Comment deleted successfully'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean, example: true}
+                  message: {type: string, example: 'Comment deleted successfully'}
+                  data: {type: object}
+        '401':
+          description: 'Not authorized'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - not the comment author or admin'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 'Comment not found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /dashboard/user:
+    get:
+      tags:
+        - Dashboard
+      summary: 'Get user dashboard data'
+      description: 'Retrieve personalized dashboard data for the current user'
+      security:
+        -
+          BearerAuth: []
+      responses:
+        '200':
+          description: 'User dashboard data'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean, example: true}
+                  data: {type: object, properties: {user: {type: object, properties: {name: {type: string}, profilePicture: {type: string}, role: {type: string}, points: {type: integer}, badges: {type: array, items: {type: string}}, joined: {type: string, format: date-time}, location: {type: string}}}, stats: {type: object, properties: {reportedCount: {type: integer}, followedCount: {type: integer}, verifiedCount: {type: integer}}}, recentReports: {type: array, items: {$ref: '#/components/schemas/Incident'}}, recentFollowed: {type: array, items: {$ref: '#/components/schemas/Incident'}}, upcomingEvents: {type: array, items: {$ref: '#/components/schemas/Event'}}}}
+        '401':
+          description: 'Not authorized'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /dashboard/admin:
+    get:
+      tags:
+        - Dashboard
+      summary: 'Get admin dashboard data'
+      description: 'Retrieve administrative dashboard data with platform statistics'
+      security:
+        -
+          BearerAuth: []
+      responses:
+        '200':
+          description: 'Admin dashboard data'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean, example: true}
+                  data: {type: object, properties: {incidentStats: {type: object, properties: {reportedCount: {type: integer}, verifiedCount: {type: integer}, inProgressCount: {type: integer}, resolvedCount: {type: integer}, total: {type: integer}}}, categoryCounts: {type: array, items: {type: object, properties: {_id: {type: string}, count: {type: integer}}}}, severityCounts: {type: array, items: {type: object, properties: {_id: {type: string}, count: {type: integer}}}}, recentIncidents: {type: array, items: {$ref: '#/components/schemas/Incident'}}, topNeighborhoods: {type: array, items: {$ref: '#/components/schemas/Neighborhood'}}, userStats: {type: object, properties: {userCount: {type: integer}, activeUserCount: {type: integer}}}, upcomingEvents: {type: array, items: {$ref: '#/components/schemas/Event'}}}}
+        '401':
+          description: 'Not authorized'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - not an admin or authority'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /dashboard/neighborhoods:
+    get:
+      tags:
+        - Dashboard
+      summary: 'Get neighborhoods data'
+      description: 'Retrieve list of neighborhoods with environmental scores'
+      parameters:
+        -
+          in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+          description: 'Page number'
+        -
+          in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+          description: 'Number of items per page'
+        -
+          in: query
+          name: sort
+          schema:
+            type: string
+            default: environmentalScore
+          description: 'Sort field'
+      responses:
+        '200':
+          description: 'List of neighborhoods'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean, example: true}
+                  data: {type: object, properties: {neighborhoods: {type: array, items: {$ref: '#/components/schemas/Neighborhood'}}, pagination: {type: object, properties: {page: {type: integer, example: 1}, limit: {type: integer, example: 10}, total: {type: integer, example: 30}, pages: {type: integer, example: 3}}}}}
+  '/dashboard/neighborhoods/{id}':
+    get:
+      tags:
+        - Dashboard
+      summary: 'Get neighborhood detail'
+      description: 'Retrieve detailed information about a specific neighborhood'
+      parameters:
+        -
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: 'Neighborhood ID'
+      responses:
+        '200':
+          description: 'Neighborhood details'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean, example: true}
+                  data: {type: object, properties: {neighborhood: {$ref: '#/components/schemas/Neighborhood'}, incidents: {type: array, items: {$ref: '#/components/schemas/Incident'}}, categoryDistribution: {type: array, items: {type: object, properties: {_id: {type: string}, count: {type: integer}}}}, statusDistribution: {type: array, items: {type: object, properties: {_id: {type: string}, count: {type: integer}}}}, upcomingEvents: {type: array, items: {$ref: '#/components/schemas/Event'}}}}
+        '404':
+          description: 'Neighborhood not found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /dashboard/stats:
+    get:
+      tags:
+        - Dashboard
+      summary: 'Get platform statistics'
+      description: 'Retrieve overall platform statistics'
+      responses:
+        '200':
+          description: 'Platform statistics'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean, example: true}
+                  data: {type: object, properties: {incidents: {type: object, properties: {total: {type: integer, example: 250}, resolved: {type: integer, example: 120}, resolutionRate: {type: number, example: 48}}}, users: {type: object, properties: {total: {type: integer, example: 500}}}, neighborhoods: {type: object, properties: {total: {type: integer, example: 30}, averageScore: {type: number, example: 75.5}}}, events: {type: object, properties: {total: {type: integer, example: 45}, upcoming: {type: integer, example: 15}}}}}
+  /events:
+    get:
+      tags:
+        - Events
+      summary: 'Get all events'
+      description: 'Retrieve a list of events with optional filtering parameters'
+      parameters:
+        -
+          in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+          description: 'Page number'
+        -
+          in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+          description: 'Number of items per page'
+        -
+          in: query
+          name: eventType
+          schema:
+            type: string
+            enum:
+              - cleanup
+              - education
+              - protest
+              - monitoring
+              - planting
+              - other
+          description: 'Filter by event type'
+        -
+          in: query
+          name: status
+          schema:
+            type: string
+            enum:
+              - scheduled
+              - cancelled
+              - completed
+            default: scheduled
+          description: 'Filter by event status'
+        -
+          in: query
+          name: sort
+          schema:
+            type: string
+            default: date
+          description: 'Sort field'
+        -
+          in: query
+          name: lat
+          schema:
+            type: number
+          description: 'Latitude for location-based search'
+        -
+          in: query
+          name: lng
+          schema:
+            type: number
+          description: 'Longitude for location-based search'
+        -
+          in: query
+          name: distance
+          schema:
+            type: integer
+            default: 10
+          description: 'Search radius in kilometers'
+      responses:
+        '200':
+          description: 'List of events'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean, example: true}
+                  data: {type: object, properties: {events: {type: array, items: {$ref: '#/components/schemas/Event'}}, pagination: {type: object, properties: {page: {type: integer, example: 1}, limit: {type: integer, example: 10}, total: {type: integer, example: 45}, pages: {type: integer, example: 5}}}}}
+    post:
+      tags:
+        - Events
+      summary: 'Create a new event'
+      description: 'Create a new community environmental event'
+      security:
+        -
+          BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - title
+                - description
+                - eventType
+                - date
+                - startTime
+                - endTime
+                - location
+              properties:
+                title:
+                  type: string
+                  example: 'River Cleanup Day'
+                description:
+                  type: string
+                  example: 'Join us for a community cleanup of the riverbank'
+                eventType:
+                  type: string
+                  enum: [cleanup, education, protest, monitoring, planting, other]
+                  example: cleanup
+                date:
+                  type: string
+                  format: date
+                  example: '2023-07-15'
+                startTime:
+                  type: string
+                  example: '09:00'
+                endTime:
+                  type: string
+                  example: '12:00'
+                location:
+                  type: object
+                  properties: {address: {type: string, example: '123 River St, Springfield'}, coordinates: {type: array, items: {type: number}, example: [-73.9857, 40.7484]}, city: {type: string, example: Springfield}, state: {type: string, example: IL}, country: {type: string, example: USA}}
+                relatedIncident:
+                  type: string
+                  example: 60d21b4667d0d8992e610c85
+                  description: 'ID of related incident (optional)'
+                maxAttendees:
+                  type: integer
+                  example: 50
+                requirementsList:
+                  type: array
+                  items: {type: object, properties: {item: {type: string, example: 'Trash bags'}, quantity: {type: integer, example: 20}}}
+                isPublic:
+                  type: boolean
+                  default: true
+                tags:
+                  type: array
+                  items: {type: string}
+                  example: [river, cleanup, volunteer]
+                image:
+                  type: string
+                  format: binary
+                  description: 'Event cover image'
+      responses:
+        '201':
+          description: 'Event created successfully'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean, example: true}
+                  message: {type: string, example: 'Event created successfully'}
+                  data: {$ref: '#/components/schemas/Event'}
+        '400':
+          description: 'Validation error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 'Not authorized'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  '/events/{id}':
+    get:
+      tags:
+        - Events
+      summary: 'Get a specific event'
+      description: 'Retrieve detailed information about a specific event'
+      parameters:
+        -
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: 'Event ID'
+      responses:
+        '200':
+          description: 'Event details'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean, example: true}
+                  data: {$ref: '#/components/schemas/Event'}
+        '403':
+          description: 'Forbidden - private event'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 'Event not found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      tags:
+        - Events
+      summary: 'Update an event'
+      description: 'Update details of an existing event'
+      security:
+        -
+          BearerAuth: []
+      parameters:
+        -
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: 'Event ID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                eventType:
+                  type: string
+                  enum: [cleanup, education, protest, monitoring, planting, other]
+                date:
+                  type: string
+                  format: date
+                startTime:
+                  type: string
+                endTime:
+                  type: string
+                location:
+                  type: object
+                  properties: {address: {type: string}, coordinates: {type: array, items: {type: number}}, city: {type: string}, state: {type: string}, country: {type: string}}
+                maxAttendees:
+                  type: integer
+                requirementsList:
+                  type: array
+                  items: {type: object, properties: {item: {type: string}, quantity: {type: integer}}}
+                isPublic:
+                  type: boolean
+                tags:
+                  type: array
+                  items: {type: string}
+      responses:
+        '200':
+          description: 'Event updated successfully'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean, example: true}
+                  message: {type: string, example: 'Event updated successfully'}
+                  data: {$ref: '#/components/schemas/Event'}
+        '400':
+          description: 'Validation error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 'Not authorized'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - not the organizer or admin'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 'Event not found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  '/events/{id}/register':
+    put:
+      tags:
+        - Events
+      summary: 'Register for an event'
+      description: 'Register the current user for an event'
+      security:
+        -
+          BearerAuth: []
+      parameters:
+        -
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: 'Event ID'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [going, maybe, not_going]
+                  default: going
+      responses:
+        '200':
+          description: 'Successfully registered for event'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean, example: true}
+                  message: {type: string, example: 'Successfully registered as going'}
+                  data: {type: object, properties: {status: {type: string, example: going}, attendeeCount: {type: integer, example: 25}}}
+        '400':
+          description: 'Event is full or validation error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 'Not authorized'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 'Event not found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  '/events/{id}/cancel':
+    put:
+      tags:
+        - Events
+      summary: 'Cancel an event'
+      description: 'Cancel an event (organizer or admin only)'
+      security:
+        -
+          BearerAuth: []
+      parameters:
+        -
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: 'Event ID'
+      responses:
+        '200':
+          description: 'Event cancelled successfully'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean, example: true}
+                  message: {type: string, example: 'Event cancelled successfully'}
+                  data: {$ref: '#/components/schemas/Event'}
+        '401':
+          description: 'Not authorized'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - not the organizer or admin'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 'Event not found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /users/profile:
+    get:
+      tags:
+        - Users
+      summary: 'Get current user profile'
+      description: 'Retrieve profile information for the currently authenticated user'
+      security:
+        -
+          BearerAuth: []
+      responses:
+        '200':
+          description: 'User profile retrieved successfully'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean, example: true}
+                  data: {$ref: '#/components/schemas/User'}
+        '401':
+          description: 'Not authorized'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      tags:
+        - Users
+      summary: 'Update user profile'
+      description: 'Update profile information for the currently authenticated user'
+      security:
+        -
+          BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: 'Jane Doe'
+                bio:
+                  type: string
+                  example: 'Environmental activist and community organizer'
+                location:
+                  type: string
+                  example: 'Springfield, IL'
+                interests:
+                  type: array
+                  items: {type: string}
+                  example: ['water conservation', 'waste management', 'habitat restoration']
+                phone:
+                  type: string
+                  example: '+1234567890'
+                notificationPreferences:
+                  type: object
+                  properties: {email: {type: boolean, example: true}, push: {type: boolean, example: true}, sms: {type: boolean, example: false}}
+                profilePicture:
+                  type: string
+                  format: binary
+                  description: 'Profile picture image file'
+      responses:
+        '200':
+          description: 'Profile updated successfully'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean, example: true}
+                  message: {type: string, example: 'Profile updated successfully'}
+                  data: {$ref: '#/components/schemas/User'}
+        '400':
+          description: 'Validation error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 'Not authorized'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /users/change-password:
+    put:
+      tags:
+        - Users
+      summary: 'Change password'
+      description: 'Change the password for the currently authenticated user'
+      security:
+        -
+          BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - currentPassword
+                - newPassword
+                - confirmPassword
+              properties:
+                currentPassword:
+                  type: string
+                  format: password
+                  example: OldSecurePassword123!
+                newPassword:
+                  type: string
+                  format: password
+                  example: NewSecurePassword456!
+                confirmPassword:
+                  type: string
+                  format: password
+                  example: NewSecurePassword456!
+      responses:
+        '200':
+          description: 'Password changed successfully'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean, example: true}
+                  message: {type: string, example: 'Password changed successfully'}
+        '400':
+          description: 'Validation error or passwords don''t match'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 'Current password is incorrect'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  '/users/{id}':
+    get:
+      tags:
+        - Users
+      summary: 'Get user by ID'
+      description: 'Retrieve public profile information for a specific user'
+      parameters:
+        -
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: 'User ID'
+      responses:
+        '200':
+          description: 'User profile retrieved successfully'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean, example: true}
+                  data: {type: object, properties: {_id: {type: string}, name: {type: string}, profilePicture: {type: string}, bio: {type: string}, location: {type: string}, role: {type: string}, badges: {type: array, items: {type: string}}, points: {type: integer}, joinedDate: {type: string, format: date-time}, reportedIncidents: {type: array, items: {$ref: '#/components/schemas/Incident'}}, organizedEvents: {type: array, items: {$ref: '#/components/schemas/Event'}}}}
+        '404':
+          description: 'User not found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  '/users/follow-incident/{id}':
+    put:
+      tags:
+        - Users
+      summary: 'Follow an incident'
+      description: 'Add an incident to the user''s followed incidents list'
+      security:
+        -
+          BearerAuth: []
+      parameters:
+        -
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: 'Incident ID'
+      responses:
+        '200':
+          description: 'Successfully followed incident'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean, example: true}
+                  message: {type: string, example: 'Incident followed successfully'}
+                  data: {type: object, properties: {isFollowing: {type: boolean, example: true}, followersCount: {type: integer, example: 15}}}
+        '401':
+          description: 'Not authorized'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 'Incident not found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      tags:
+        - Users
+      summary: 'Unfollow an incident'
+      description: 'Remove an incident from the user''s followed incidents list'
+      security:
+        -
+          BearerAuth: []
+      parameters:
+        -
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: 'Incident ID'
+      responses:
+        '200':
+          description: 'Successfully unfollowed incident'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean, example: true}
+                  message: {type: string, example: 'Incident unfollowed successfully'}
+                  data: {type: object, properties: {isFollowing: {type: boolean, example: false}, followersCount: {type: integer, example: 14}}}
+        '401':
+          description: 'Not authorized'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 'Incident not found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /users/followed-incidents:
+    get:
+      tags:
+        - Users
+      summary: 'Get followed incidents'
+      description: 'Retrieve all incidents followed by the current user'
+      security:
+        -
+          BearerAuth: []
+      parameters:
+        -
+          in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+          description: 'Page number'
+        -
+          in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+          description: 'Number of items per page'
+      responses:
+        '200':
+          description: 'List of followed incidents'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean, example: true}
+                  data: {type: object, properties: {incidents: {type: array, items: {$ref: '#/components/schemas/Incident'}}, pagination: {type: object, properties: {page: {type: integer, example: 1}, limit: {type: integer, example: 10}, total: {type: integer, example: 25}, pages: {type: integer, example: 3}}}}}
+        '401':
+          description: 'Not authorized'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /users/reported-incidents:
+    get:
+      tags:
+        - Users
+      summary: 'Get reported incidents'
+      description: 'Retrieve all incidents reported by the current user'
+      security:
+        -
+          BearerAuth: []
+      parameters:
+        -
+          in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+          description: 'Page number'
+        -
+          in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+          description: 'Number of items per page'
+      responses:
+        '200':
+          description: 'List of reported incidents'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean, example: true}
+                  data: {type: object, properties: {incidents: {type: array, items: {$ref: '#/components/schemas/Incident'}}, pagination: {type: object, properties: {page: {type: integer, example: 1}, limit: {type: integer, example: 10}, total: {type: integer, example: 15}, pages: {type: integer, example: 2}}}}}
+        '401':
+          description: 'Not authorized'
           content:
             application/json:
               schema:
