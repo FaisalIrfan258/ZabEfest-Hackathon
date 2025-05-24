@@ -42,7 +42,7 @@ export default function LoginForm() {
     }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const newErrors: Record<string, string> = {}
 
@@ -64,9 +64,17 @@ export default function LoginForm() {
     setErrors(newErrors)
 
     if (Object.keys(newErrors).length === 0) {
-      // Handle login logic here
-      console.log("Login data:", formData)
-      alert("Login successful!")
+      // Store user data in localStorage for demo purposes
+      const userData = {
+        username: formData.username,
+        cnic: formData.cnic,
+        loginTime: new Date().toISOString(),
+      }
+
+      localStorage.setItem("user", JSON.stringify(userData))
+
+      // Use Next.js router for proper navigation
+      window.location.replace("/dashboard")
     }
   }
 
@@ -158,4 +166,3 @@ export default function LoginForm() {
     </div>
   )
 }
-

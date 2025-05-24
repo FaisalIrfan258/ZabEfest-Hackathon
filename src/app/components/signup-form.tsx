@@ -62,7 +62,7 @@ export default function SignupForm() {
     }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const newErrors: Record<string, string> = {}
 
@@ -102,9 +102,20 @@ export default function SignupForm() {
     setErrors(newErrors)
 
     if (Object.keys(newErrors).length === 0) {
-      // Handle signup logic here
-      console.log("Signup data:", formData)
-      alert("Signup successful!")
+      // Store user data in localStorage for demo purposes
+      const userData = {
+        name: formData.name,
+        email: formData.email,
+        cnic: formData.cnic,
+        address: formData.address,
+        mobile: formData.mobile,
+        signupTime: new Date().toISOString(),
+      }
+
+      localStorage.setItem("user", JSON.stringify(userData))
+
+      // Use Next.js router for proper navigation
+      window.location.replace("/dashboard")
     }
   }
 
