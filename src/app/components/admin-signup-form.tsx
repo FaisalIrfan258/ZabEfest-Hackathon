@@ -139,6 +139,7 @@ export default function AdminSignupForm() {
                 id="fullName"
                 name="fullName"
                 type="text"
+                autoComplete="off"
                 value={formData.fullName}
                 onChange={handleInputChange}
                 placeholder="Enter your full name"
@@ -159,6 +160,7 @@ export default function AdminSignupForm() {
                 id="email"
                 name="email"
                 type="email"
+                autoComplete="off"
                 value={formData.email}
                 onChange={handleInputChange}
                 placeholder="Enter your email address"
@@ -179,6 +181,7 @@ export default function AdminSignupForm() {
                 id="phoneNo"
                 name="phoneNo"
                 type="text"
+                autoComplete="off"
                 value={formData.phoneNo}
                 onChange={handleInputChange}
                 placeholder="03001234567"
@@ -201,6 +204,7 @@ export default function AdminSignupForm() {
                 id="password"
                 name="password"
                 type="password"
+                autoComplete="off"
                 value={formData.password}
                 onChange={handleInputChange}
                 placeholder="Enter your password"
@@ -222,6 +226,7 @@ export default function AdminSignupForm() {
                 id="confirmPassword"
                 name="confirmPassword"
                 type="password"
+                autoComplete="off"
                 value={formData.confirmPassword}
                 onChange={handleInputChange}
                 placeholder="Confirm your password"
@@ -272,6 +277,11 @@ export default function AdminSignupForm() {
               {"Already have an admin account? "}
               <Link href="/admin/login" className="text-green-600 hover:text-green-800 underline font-medium">
                 Login here
+              </Link>
+            </div>
+            <div className="pt-2 border-t border-gray-200 text-center">
+              <Link href="/signup" className="text-gray-500 hover:text-gray-700 underline text-xs">
+                Register as User Instead
               </Link>
             </div>
           </CardFooter>

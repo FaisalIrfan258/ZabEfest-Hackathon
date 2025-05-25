@@ -73,7 +73,7 @@ export default function AdminLoginForm() {
               <span className="text-white font-bold text-lg">✓</span>
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold text-center text-gray-900">Login</CardTitle>
+          <CardTitle className="text-2xl font-bold text-center text-gray-900">Admin Login</CardTitle>
           <CardDescription className="text-center text-gray-600">
             Access the Eco Tracker admin dashboard
           </CardDescription>
@@ -88,6 +88,7 @@ export default function AdminLoginForm() {
                 id="email"
                 name="email"
                 type="email"
+                autoComplete="off"
                 value={formData.email}
                 onChange={handleInputChange}
                 placeholder="Enter your admin email"
@@ -108,6 +109,7 @@ export default function AdminLoginForm() {
                 id="password"
                 name="password"
                 type="password"
+                autoComplete="off"
                 value={formData.password}
                 onChange={handleInputChange}
                 placeholder="Enter your password"
@@ -123,13 +125,24 @@ export default function AdminLoginForm() {
 
           <CardFooter className="flex flex-col space-y-4">
             <Button type="submit" className="w-full bg-green-600 hover:bg-green-700">
-              Login
+              Login to Admin Panel
             </Button>
 
             <div className="flex flex-col space-y-2 text-sm text-center">
               <Link href="/admin/forgot-password" className="text-green-600 hover:text-green-800 underline font-medium">
                 Forgot Password?
               </Link>
+              <div className="text-gray-600">
+                {"Need admin access? "}
+                <Link href="/admin/signup" className="text-green-600 hover:text-green-800 underline font-medium">
+                  Request Admin Account
+                </Link>
+              </div>
+              <div className="pt-2 border-t border-gray-200">
+                <Link href="/login" className="text-gray-500 hover:text-gray-700 underline text-xs">
+                  User Login Instead
+                </Link>
+              </div>
             </div>
           </CardFooter>
         </form>
