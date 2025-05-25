@@ -1,6 +1,6 @@
 "use client"
 
-import { Bell, User } from "lucide-react"
+import { Bell, User, Shield } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -14,35 +14,42 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useState, useEffect } from "react"
 
-export function DashboardHeader() {
-  const [user, setUser] = useState<any>(null)
+export function AdminHeader() {
+  const [admin, setAdmin] = useState<any>(null)
   const [notifications, setNotifications] = useState([
     {
       id: 1,
-      title: "New incident reported nearby",
-      message: "Water dumping reported 0.5km away",
-      time: "5 min ago",
+      title: "New high priority incident",
+      message: "Water dumping reported in Block 5",
+      time: "2 min ago",
       read: false,
     },
     {
       id: 2,
-      title: "Community event",
-      message: "Tree plantation drive this weekend",
+      title: "User registration spike",
+      message: "15 new users registered today",
       time: "1 hour ago",
       read: false,
+    },
+    {
+      id: 3,
+      title: "Weekly report ready",
+      message: "Environmental impact report is available",
+      time: "2 hours ago",
+      read: true,
     },
   ])
 
   useEffect(() => {
-    const userData = localStorage.getItem("user")
-    if (userData) {
-      setUser(JSON.parse(userData))
+    const adminData = localStorage.getItem("admin")
+    if (adminData) {
+      setAdmin(JSON.parse(adminData))
     }
   }, [])
 
   const unreadCount = notifications.filter((n) => !n.read).length
-  const displayName = user?.name || user?.username || "User"
-  const userEmail = user?.email || "user@example.com"
+  const displayName = admin?.fullName || admin?.email || "Admin"
+  const adminEmail = admin?.email || "admin@ecotracker.com"
 
   const markAsRead = (id: number) => {
     setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)))
@@ -63,8 +70,14 @@ export function DashboardHeader() {
             </AvatarFallback>
           </Avatar>
           <div>
-            <h2 className="font-semibold text-gray-900">{displayName}</h2>
-            <p className="text-sm text-gray-500">{userEmail}</p>
+            <div className="flex items-center gap-2">
+              <h2 className="font-semibold text-gray-900">{displayName}</h2>
+              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                <Shield className="h-3 w-3 mr-1" />
+                Admin
+              </Badge>
+            </div>
+            <p className="text-sm text-gray-500">{adminEmail}</p>
           </div>
         </div>
 
@@ -82,7 +95,7 @@ export function DashboardHeader() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-80">
-              <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+              <DropdownMenuLabel>Admin Notifications</DropdownMenuLabel>
               <DropdownMenuSeparator />
               {notifications.map((notification) => (
                 <DropdownMenuItem
@@ -101,7 +114,7 @@ export function DashboardHeader() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* User Menu */}
+          {/* Admin Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="text-gray-600 hover:text-green-600">
@@ -109,11 +122,15 @@ export function DashboardHeader() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuLabel>Admin Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => (window.location.href = "/dashboard/profile")}>
+              <DropdownMenuItem onClick={() => (window.location.href = "/admin/dashboard/profile")}>
                 <User className="mr-2 h-4 w-4" />
-                Profile
+                Profile Settings
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => (window.location.href = "/admin/dashboard/analytics")}>
+                <Shield className="mr-2 h-4 w-4" />
+                System Settings
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
