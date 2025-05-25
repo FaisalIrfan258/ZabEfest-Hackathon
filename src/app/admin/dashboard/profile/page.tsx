@@ -117,8 +117,8 @@ export default function AdminProfilePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Admin Profile</h1>
-        <p className="text-gray-600 mt-2">Manage your admin account information and settings</p>
+        <h1 className="text-3xl font-bold text-green-800">Admin Profile</h1>
+        <p className="text-green-600 mt-2">Manage your admin account information and settings</p>
       </div>
 
       {successMessage && (
@@ -141,7 +141,7 @@ export default function AdminProfilePage() {
                   .toUpperCase()}
               </AvatarFallback>
             </Avatar>
-            <CardTitle className="text-xl text-gray-900">{displayName}</CardTitle>
+            <CardTitle className="text-xl text-green-800">{displayName}</CardTitle>
             <CardDescription className="flex items-center justify-center gap-2">
               <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                 <Shield className="h-3 w-3 mr-1" />
@@ -150,7 +150,7 @@ export default function AdminProfilePage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="text-center text-sm text-gray-600">
+            <div className="text-center text-sm text-green-600">
               <p>Member since: {admin.registeredAt ? new Date(admin.registeredAt).toLocaleDateString() : "N/A"}</p>
               <p>Last login: {admin.loginTime ? new Date(admin.loginTime).toLocaleDateString() : "N/A"}</p>
             </div>
@@ -162,7 +162,7 @@ export default function AdminProfilePage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-gray-900">Profile Information</CardTitle>
+                <CardTitle className="text-green-800">Profile Information</CardTitle>
                 <CardDescription className="text-gray-600">
                   Update your admin account details and contact information
                 </CardDescription>
@@ -182,7 +182,7 @@ export default function AdminProfilePage() {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="fullName" className="text-gray-700">
+                <Label htmlFor="fullName" className="text-green-700">
                   Full Name
                 </Label>
                 <Input
@@ -201,7 +201,7 @@ export default function AdminProfilePage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-gray-700">
+                <Label htmlFor="email" className="text-green-700">
                   Email Address
                 </Label>
                 <Input
@@ -221,7 +221,7 @@ export default function AdminProfilePage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="phoneNo" className="text-gray-700">
+                <Label htmlFor="phoneNo" className="text-green-700">
                   Phone Number
                 </Label>
                 <Input
@@ -243,7 +243,7 @@ export default function AdminProfilePage() {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-gray-700">Role</Label>
+                <Label className="text-green-700">Role</Label>
                 <Input value="System Administrator" disabled className="bg-gray-50" />
               </div>
             </div>
@@ -266,7 +266,7 @@ export default function AdminProfilePage() {
       {/* Security Settings */}
       <Card className="border-green-200">
         <CardHeader>
-          <CardTitle className="text-gray-900">Security Settings</CardTitle>
+          <CardTitle className="text-green-800">Security Settings</CardTitle>
           <CardDescription className="text-gray-600">
             Manage your account security and access permissions
           </CardDescription>
@@ -274,7 +274,7 @@ export default function AdminProfilePage() {
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
             <div>
-              <h4 className="font-medium text-gray-900">Password</h4>
+              <h4 className="font-medium text-green-800">Password</h4>
               <p className="text-sm text-gray-600">Last changed 30 days ago</p>
             </div>
             <Button variant="outline" className="border-green-200 text-green-700 hover:bg-green-50">
@@ -284,7 +284,7 @@ export default function AdminProfilePage() {
 
           <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
             <div>
-              <h4 className="font-medium text-gray-900">Two-Factor Authentication</h4>
+              <h4 className="font-medium text-green-800">Two-Factor Authentication</h4>
               <p className="text-sm text-gray-600">Add an extra layer of security to your account</p>
             </div>
             <Button variant="outline" className="border-green-200 text-green-700 hover:bg-green-50">
@@ -294,7 +294,7 @@ export default function AdminProfilePage() {
 
           <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
             <div>
-              <h4 className="font-medium text-gray-900">Login Sessions</h4>
+              <h4 className="font-medium text-green-800">Login Sessions</h4>
               <p className="text-sm text-gray-600">Manage your active login sessions</p>
             </div>
             <Button variant="outline" className="border-green-200 text-green-700 hover:bg-green-50">

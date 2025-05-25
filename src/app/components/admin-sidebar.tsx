@@ -91,12 +91,12 @@ export function AdminSidebar() {
                     asChild
                     isActive={pathname === item.url}
                     className={`
-                      ${
-                        pathname === item.url
-                          ? "bg-green-100 text-green-700 border-r-2 border-green-600"
-                          : "text-gray-600 hover:bg-green-50 hover:text-green-700"
-                      }
-                    `}
+  ${
+    pathname === item.url
+      ? "bg-green-50 text-green-700 font-medium"
+      : "text-gray-600 hover:bg-green-50 hover:text-green-700"
+  }
+`}
                   >
                     <Link href={item.url}>
                       <item.icon className="h-4 w-4" />
