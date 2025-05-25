@@ -4,13 +4,10 @@ import { ReactNode } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import {
-  FileText,
   Home,
   LogOut,
-  Settings,
   User,
   MapPin,
-  BarChart2,
   AlertTriangle,
   Menu,
   X,
@@ -84,34 +81,19 @@ export default function DashboardLayout({
       label: "Dashboard",
     },
     {
-      href: "/dashboard/report-incident",
+      href: "/dashboard/incident-reporting",
       icon: <AlertTriangle className="w-5 h-5" />,
       label: "Report Incident",
     },
     {
-      href: "/dashboard/incidents-map",
+      href: "/dashboard/nearby-incidents",
       icon: <MapPin className="w-5 h-5" />,
       label: "Incidents Map",
-    },
-    {
-      href: "/dashboard/my-reports",
-      icon: <FileText className="w-5 h-5" />,
-      label: "My Reports",
-    },
-    {
-      href: "/dashboard/statistics",
-      icon: <BarChart2 className="w-5 h-5" />,
-      label: "Statistics",
     },
     {
       href: "/dashboard/profile",
       icon: <User className="w-5 h-5" />,
       label: "Profile",
-    },
-    {
-      href: "/dashboard/settings",
-      icon: <Settings className="w-5 h-5" />,
-      label: "Settings",
     },
   ]
 
