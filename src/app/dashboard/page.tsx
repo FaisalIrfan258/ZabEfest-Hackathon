@@ -1,31 +1,23 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { FileText, MapPin, User, Clock } from 'lucide-react'
+import { FileText, MapPin, User, Clock, ArrowUp } from 'lucide-react'
+import { useAuth } from "@/lib/auth-context"
+import Link from "next/link"
 
 export default function DashboardPage() {
-  const [user, setUser] = useState<any>(null)
-
-  useEffect(() => {
-    const userData = localStorage.getItem('user')
-    if (userData) {
-      setUser(JSON.parse(userData))
-    }
-  }, [])
+  const { user } = useAuth()
 
   if (!user) {
-    return <div>Loading...</div>
+    return null // This should not happen as the ProtectedRoute component will redirect to login
   }
-
-  const displayName = user.name || user.username || "User"
 
   return (
     <div className="space-y-6">
       {/* Welcome Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg p-6">
-        <h1 className="text-3xl font-bold mb-2">Welcome back, {displayName}!</h1>
-        <p className="text-blue-100">
+      <div className="bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg p-6">
+        <h1 className="text-3xl font-bold mb-2">Welcome back, {user.name}!</h1>
+        <p className="text-green-100">
           Thank you for being part of our environmental monitoring community. 
           Your reports help make our environment better.
         </p>
@@ -39,7 +31,7 @@ export default function DashboardPage() {
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">0</div>
+            <div className="text-2xl font-bold">{user.reportedIncidents?.length || 0}</div>
             <p className="text-xs text-muted-foreground">Reports submitted</p>
           </CardContent>
         </Card>
@@ -57,23 +49,23 @@ export default function DashboardPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Resolved</CardTitle>
+            <CardTitle className="text-sm font-medium">Following</CardTitle>
             <MapPin className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">0</div>
-            <p className="text-xs text-muted-foreground">Issues resolved</p>
+            <div className="text-2xl font-bold">{user.followedIncidents?.length || 0}</div>
+            <p className="text-xs text-muted-foreground">Incidents followed</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Profile Status</CardTitle>
-            <User className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Eco Points</CardTitle>
+            <ArrowUp className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">Active</div>
-            <p className="text-xs text-muted-foreground">Account verified</p>
+            <div className="text-2xl font-bold text-green-600">{user.points}</div>
+            <p className="text-xs text-muted-foreground">Earned points</p>
           </CardContent>
         </Card>
       </div>
@@ -88,34 +80,66 @@ export default function DashboardPage() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card className="cursor-pointer hover:shadow-md transition-shadow" 
-                  onClick={() => window.location.href = '/dashboard/incident-reporting'}>
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-3">
-                  <FileText className="h-8 w-8 text-blue-600" />
-                  <div>
-                    <h3 className="font-semibold">Report New Incident</h3>
-                    <p className="text-sm text-gray-600">Submit a new environmental incident report</p>
+            <Link href="/dashboard/report-incident">
+              <Card className="cursor-pointer hover:shadow-md transition-shadow hover:border-green-300">
+                <CardContent className="p-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="bg-green-100 p-2 rounded-lg">
+                      <FileText className="h-8 w-8 text-green-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold">Report New Incident</h3>
+                      <p className="text-sm text-gray-600">Submit a new environmental incident report</p>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </Link>
 
-            <Card className="cursor-pointer hover:shadow-md transition-shadow"
-                  onClick={() => window.location.href = '/dashboard/profile'}>
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-3">
-                  <User className="h-8 w-8 text-green-600" />
-                  <div>
-                    <h3 className="font-semibold">View Profile</h3>
-                    <p className="text-sm text-gray-600">Manage your account settings and information</p>
+            <Link href="/dashboard/profile">
+              <Card className="cursor-pointer hover:shadow-md transition-shadow hover:border-green-300">
+                <CardContent className="p-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="bg-green-100 p-2 rounded-lg">
+                      <User className="h-8 w-8 text-green-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold">View Profile</h3>
+                      <p className="text-sm text-gray-600">Manage your account settings and information</p>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </Link>
           </div>
         </CardContent>
       </Card>
+
+      {/* Badges */}
+      {user.badges && user.badges.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Your Badges</CardTitle>
+            <CardDescription>
+              Achievements earned for your environmental contributions
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-4">
+              {user.badges.map((badge, index) => (
+                <div key={index} className="flex flex-col items-center">
+                  <div className="bg-green-100 p-3 rounded-full">
+                    <div className="h-10 w-10 bg-green-600 rounded-full flex items-center justify-center text-white font-bold">
+                      {badge.charAt(0).toUpperCase()}
+                    </div>
+                  </div>
+                  <span className="mt-2 text-sm">{badge}</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }
