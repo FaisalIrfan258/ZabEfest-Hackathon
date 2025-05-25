@@ -29,9 +29,10 @@ app.use(
       scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "trusted-cdn.com"],
       styleSrc: ["'self'", "'unsafe-inline'", "trusted-cdn.com"],
       imgSrc: ["'self'", "data:", "trusted-cdn.com", "*.cloudinary.com"],
-      connectSrc: ["'self'"],
+      connectSrc: ["'self'", "https://fcm.googleapis.com", "https://*.push.apple.com"],
       frameSrc: ["'self'"],
       fontSrc: ["'self'", "trusted-cdn.com"],
+      workerSrc: ["'self'"]
     },
   })
 );
