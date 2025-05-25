@@ -33,6 +33,13 @@ const userSchema = new mongoose.Schema(
       required: [true, 'Name is required'],
       trim: true,
     },
+    username: {
+      type: String,
+      required: [true, 'Username is required'],
+      unique: true,
+      trim: true,
+      minlength: [3, 'Username should be at least 3 characters long'],
+    },
     cnic: {
       type: String,
       trim: true,
@@ -72,13 +79,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
-    bio: {
-      type: String,
-      maxlength: [250, 'Bio cannot be more than 250 characters'],
-    },
     location: {
       type: String,
       trim: true,
+      description: 'User\'s full address',
     },
     points: {
       type: Number,

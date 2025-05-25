@@ -5,6 +5,7 @@ const Joi = require('joi');
  */
 exports.registerValidator = Joi.object({
   name: Joi.string().trim().min(3).max(50).required(),
+  username: Joi.string().trim().min(3).max(30).required(),
   cnic: Joi.string().trim().pattern(/^[0-9]{13}$/).when('role', {
     is: 'user',
     then: Joi.required(),
@@ -14,17 +15,22 @@ exports.registerValidator = Joi.object({
   password: Joi.string().min(6).max(30).required(),
   confirmPassword: Joi.string().valid(Joi.ref('password')).required(),
   role: Joi.string().valid('user', 'authority').default('user'),
-  location: Joi.string().trim().allow('', null),
-  bio: Joi.string().trim().max(250).allow('', null),
+  location: Joi.string().trim().min(5).max(200).description('User\'s full address').allow('', null),
 });
 
 /**
  * User login validation (using CNIC)
  */
-exports.userLoginValidator = Joi.object({
-  cnic: Joi.string().trim().pattern(/^[0-9]{13}$/).required(),
-  password: Joi.string().required(),
-});
+exports.userLoginValidator = Joi.alternatives().try(
+  Joi.object({
+    cnic: Joi.string().trim().pattern(/^[0-9]{13}$/).required(),
+    password: Joi.string().required(),
+  }),
+  Joi.object({
+    username: Joi.string().trim().required(),
+    password: Joi.string().required(),
+  })
+);
 
 /**
  * Admin/Authority login validation (using email)
@@ -32,6 +38,17 @@ exports.userLoginValidator = Joi.object({
 exports.adminLoginValidator = Joi.object({
   email: Joi.string().email().required(),
   password: Joi.string().required(),
+});
+
+/**
+ * Admin registration validation
+ */
+exports.adminRegisterValidator = Joi.object({
+  name: Joi.string().trim().min(3).max(50).required(),
+  email: Joi.string().email().required(),
+  password: Joi.string().min(6).max(30).required(),
+  confirmPassword: Joi.string().valid(Joi.ref('password')).required(),
+  role: Joi.string().valid('admin', 'authority').required()
 });
 
 /**
@@ -82,8 +99,7 @@ exports.pushSubscriptionValidator = Joi.object({
  */
 exports.profileUpdateValidator = Joi.object({
   name: Joi.string().trim().min(3).max(50),
-  bio: Joi.string().trim().max(250).allow('', null),
-  location: Joi.string().trim().allow('', null),
+  location: Joi.string().trim().min(5).max(200).description('User\'s full address').allow('', null),
 });
 
 /**

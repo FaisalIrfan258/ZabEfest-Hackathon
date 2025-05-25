@@ -12,7 +12,14 @@ router.post(
   authController.register
 );
 
-// User login (CNIC-based)
+// Admin registration
+router.post(
+  '/register/admin',
+  validator.validateRequest(validator.adminRegisterValidator),
+  authController.registerAdmin
+);
+
+// User login (CNIC or username based)
 router.post(
   '/login/user',
   validator.validateRequest(validator.userLoginValidator),
@@ -26,7 +33,7 @@ router.post(
   authController.login
 );
 
-// Legacy login endpoint (supports both methods)
+// Legacy login endpoint (supports all methods)
 router.post(
   '/login',
   validator.validateRequest(validator.loginValidator),

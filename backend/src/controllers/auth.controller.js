@@ -9,7 +9,7 @@ const crypto = require('crypto');
  */
 exports.register = async (req, res, next) => {
   try {
-    const { name, email, password, role, location, bio, cnic } = req.body;
+    const { name, username, email, password, role, location, cnic } = req.body;
 
     // Check if user with email already exists
     const existingUser = await User.findOne({ email });
@@ -17,6 +17,15 @@ exports.register = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         message: 'User already exists with this email',
+      });
+    }
+
+    // Check if username is already taken
+    const existingUsername = await User.findOne({ username });
+    if (existingUsername) {
+      return res.status(400).json({
+        success: false,
+        message: 'Username is already taken',
       });
     }
 
@@ -42,11 +51,11 @@ exports.register = async (req, res, next) => {
     // Create new user
     const user = await User.create({
       name,
+      username,
       email,
       password,
       role: role === 'authority' ? 'authority' : 'user', // Only allow 'user' or 'authority'
       location,
-      bio,
       cnic
     });
 
@@ -68,18 +77,72 @@ exports.register = async (req, res, next) => {
 };
 
 /**
+ * @desc    Register new admin
+ * @route   POST /api/auth/register/admin
+ * @access  Public
+ */
+exports.registerAdmin = async (req, res, next) => {
+  try {
+    const { name, email, password, role } = req.body;
+
+    // Check if user with email already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: 'User already exists with this email',
+      });
+    }
+
+    // Create new admin user
+    const user = await User.create({
+      name,
+      email,
+      password,
+      role: role === 'authority' ? 'authority' : 'admin', // Only allow 'admin' or 'authority'
+      username: email.split('@')[0] + Math.floor(Math.random() * 1000), // Generate a random username for admin
+    });
+
+    // Generate JWT
+    const jwt = token.generateToken(user);
+
+    // Return response
+    res.status(201).json({
+      success: true,
+      message: 'Admin registered successfully',
+      data: {
+        user: user.getPublicProfile(),
+        token: jwt,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
  * @desc    Login user
  * @route   POST /api/auth/login
  * @access  Public
  */
 exports.login = async (req, res, next) => {
   try {
-    const { email, cnic, password } = req.body;
+    const { email, cnic, username, password } = req.body;
     let user;
 
     // Check if login is using CNIC (for regular users)
     if (cnic) {
       user = await User.findOne({ cnic }).select('+password');
+      if (!user) {
+        return res.status(401).json({
+          success: false,
+          message: 'Invalid credentials',
+        });
+      }
+    }
+    // Check if login is using username (for regular users)
+    else if (username) {
+      user = await User.findOne({ username }).select('+password');
       if (!user) {
         return res.status(401).json({
           success: false,
@@ -99,7 +162,7 @@ exports.login = async (req, res, next) => {
     } else {
       return res.status(400).json({
         success: false,
-        message: 'Please provide email or CNIC',
+        message: 'Please provide email, username, or CNIC',
       });
     }
 
@@ -166,12 +229,12 @@ exports.getMe = async (req, res, next) => {
  */
 exports.updateProfile = async (req, res, next) => {
   try {
-    const { name, bio, location } = req.body;
+    const { name, location } = req.body;
 
     // Find user and update
     const user = await User.findByIdAndUpdate(
       req.user._id,
-      { name, bio, location },
+      { name, location },
       { new: true, runValidators: true }
     );
 
