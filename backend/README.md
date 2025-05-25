@@ -34,7 +34,7 @@ EcoTracker is a community-driven environmental monitoring platform that enables 
 - React.js
 - Mapbox/Leaflet for maps
 - Chart.js for data visualization
-- Firebase Cloud Messaging for notifications
+- Web Push for notifications
 
 ## API Documentation
 
@@ -64,7 +64,8 @@ The Swagger documentation is generated from individual JSON files in the `script
 - `PUT /api/auth/me` - Update user profile
 - `PUT /api/auth/password` - Change password
 - `PUT /api/auth/profile-picture` - Upload profile picture
-- `PUT /api/auth/fcm-token` - Update FCM token for notifications
+- `PUT /api/auth/push-subscription` - Update push subscription for notifications
+- `GET /api/auth/vapid-public-key` - Get VAPID public key for push notifications
 
 ### Incidents
 - `GET /api/incidents` - Get all incidents with filtering
@@ -100,10 +101,9 @@ The Swagger documentation is generated from individual JSON files in the `script
 ## Getting Started
 
 ### Prerequisites
-- Node.js (v14 or higher)
+- Node.js (v16+)
 - MongoDB
 - Cloudinary account (optional for production)
-- Firebase project (for push notifications)
 
 ### Installation
 
@@ -129,10 +129,10 @@ The Swagger documentation is generated from individual JSON files in the `script
    CLOUDINARY_API_KEY=your_api_key
    CLOUDINARY_API_SECRET=your_api_secret
    
-   # Firebase Configuration (for push notifications)
-   FIREBASE_PROJECT_ID=your_firebase_project_id
-   FIREBASE_CLIENT_EMAIL=your_firebase_client_email
-   FIREBASE_PRIVATE_KEY="your_firebase_private_key_with_newlines"
+   # Web Push Configuration
+   VAPID_PUBLIC_KEY=your_vapid_public_key
+   VAPID_PRIVATE_KEY=your_vapid_private_key
+   VAPID_SUBJECT=mailto:contact@ecotracker.com
    ```
 
 4. Start the development server

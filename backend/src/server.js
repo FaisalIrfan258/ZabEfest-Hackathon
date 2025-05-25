@@ -14,6 +14,7 @@ const commentRoutes = require('./routes/comment.routes');
 const dashboardRoutes = require('./routes/dashboard.routes');
 const eventRoutes = require('./routes/event.routes');
 const swaggerRoutes = require('./routes/swagger.routes');
+const notificationRoutes = require('./routes/notification.routes');
 
 // Create Express app
 const app = express();
@@ -21,17 +22,19 @@ const PORT = process.env.PORT || 5000;
 
 // Middlewares
 app.use(cors());
-app.use(helmet({
-  contentSecurityPolicy: {
+app.use(
+  helmet.contentSecurityPolicy({
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", "data:", "https:"],
-      connectSrc: ["'self'", "https://firebase-project-id.firebaseio.com"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "trusted-cdn.com"],
+      styleSrc: ["'self'", "'unsafe-inline'", "trusted-cdn.com"],
+      imgSrc: ["'self'", "data:", "trusted-cdn.com", "*.cloudinary.com"],
+      connectSrc: ["'self'"],
+      frameSrc: ["'self'"],
+      fontSrc: ["'self'", "trusted-cdn.com"],
     },
-  },
-}));
+  })
+);
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -46,6 +49,7 @@ app.use('/api/incidents', incidentRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/events', eventRoutes);
+app.use('/api/notifications', notificationRoutes);
 app.use('/api-docs', swaggerRoutes);
 
 // Root route

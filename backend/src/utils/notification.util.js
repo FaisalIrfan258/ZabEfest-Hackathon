@@ -1,57 +1,42 @@
 /**
  * Notification utility for sending web push notifications
  */
+const { webpush, initializeWebPush } = require('../config/webpush.config');
+
+// Initialize web push on startup
+const { vapidKeys } = initializeWebPush();
 
 /**
  * Send a web push notification to a user
- * @param {String} userFcmToken - User's FCM token
+ * @param {Object} subscription - User's push subscription object
  * @param {Object} notification - Notification data
  * @returns {Promise} - Promise that resolves when notification is sent
  */
-exports.sendNotification = async (userFcmToken, notification) => {
+exports.sendNotification = async (subscription, notification) => {
   try {
-    if (!userFcmToken) {
-      console.log('No FCM token provided, skipping notification');
+    if (!subscription) {
+      console.log('No subscription provided, skipping notification');
       return;
     }
 
-    // In a real implementation, this would use the Firebase Admin SDK
-    // For the MVP, we'll log the notification and simulate sending
-    console.log(`[NOTIFICATION] Would send to token ${userFcmToken}:`, notification);
+    // Create payload
+    const payload = JSON.stringify({
+      title: notification.title,
+      body: notification.body,
+      icon: notification.icon || '/favicon.ico',
+      badge: notification.badge || '/badge-icon.png',
+      data: notification.data || {},
+    });
 
-    // Simulate successful notification
+    // Send notification
+    const result = await webpush.sendNotification(subscription, payload);
+    console.log('Successfully sent notification:', result.statusCode);
+    
     return {
       success: true,
       message: 'Notification sent successfully',
+      statusCode: result.statusCode,
     };
-
-    /* 
-    // Example implementation with Firebase Admin SDK:
-    
-    const admin = require('firebase-admin');
-    
-    // Initialize Firebase Admin if not already initialized
-    if (!admin.apps.length) {
-      admin.initializeApp({
-        credential: admin.credential.cert({
-          projectId: process.env.FIREBASE_PROJECT_ID,
-          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-          privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-        }),
-      });
-    }
-    
-    const message = {
-      notification: {
-        title: notification.title,
-        body: notification.body,
-      },
-      data: notification.data || {},
-      token: userFcmToken,
-    };
-    
-    return admin.messaging().send(message);
-    */
   } catch (error) {
     console.error('Error sending notification:', error);
     return {
@@ -64,62 +49,53 @@ exports.sendNotification = async (userFcmToken, notification) => {
 
 /**
  * Send notifications to multiple users
- * @param {Array} userFcmTokens - Array of user FCM tokens
+ * @param {Array} subscriptions - Array of user push subscription objects
  * @param {Object} notification - Notification data
  * @returns {Promise} - Promise that resolves when all notifications are sent
  */
-exports.sendMulticastNotification = async (userFcmTokens, notification) => {
+exports.sendMulticastNotification = async (subscriptions, notification) => {
   try {
-    if (!userFcmTokens || !userFcmTokens.length) {
-      console.log('No FCM tokens provided, skipping notifications');
+    if (!subscriptions || !subscriptions.length) {
+      console.log('No subscriptions provided, skipping notifications');
       return;
     }
 
-    // Filter out null/undefined tokens
-    const validTokens = userFcmTokens.filter(token => token);
+    // Filter out null/undefined subscriptions
+    const validSubscriptions = subscriptions.filter(sub => sub);
 
-    if (!validTokens.length) {
-      console.log('No valid FCM tokens, skipping notifications');
+    if (!validSubscriptions.length) {
+      console.log('No valid subscriptions, skipping notifications');
       return;
     }
 
-    // In a real implementation, this would use the Firebase Admin SDK
-    // For the MVP, we'll log the notification and simulate sending
-    console.log(`[NOTIFICATION] Would send to ${validTokens.length} tokens:`, notification);
-
-    // Simulate successful notification
+    // Create payload
+    const payload = JSON.stringify({
+      title: notification.title,
+      body: notification.body,
+      icon: notification.icon || '/favicon.ico',
+      badge: notification.badge || '/badge-icon.png',
+      data: notification.data || {},
+    });
+    
+    // Send to all subscriptions
+    const results = await Promise.allSettled(
+      validSubscriptions.map(subscription => 
+        webpush.sendNotification(subscription, payload)
+      )
+    );
+    
+    // Count successes and failures
+    const successCount = results.filter(result => result.status === 'fulfilled').length;
+    const failureCount = results.filter(result => result.status === 'rejected').length;
+    
+    console.log(`Successfully sent multicast notification: ${successCount} successful, ${failureCount} failed`);
+    
     return {
       success: true,
-      message: `Notification sent to ${validTokens.length} recipients`,
+      message: `Notification sent to ${successCount} recipients`,
+      failureCount,
+      successCount,
     };
-
-    /*
-    // Example implementation with Firebase Admin SDK:
-    
-    const admin = require('firebase-admin');
-    
-    // Initialize Firebase Admin if not already initialized
-    if (!admin.apps.length) {
-      admin.initializeApp({
-        credential: admin.credential.cert({
-          projectId: process.env.FIREBASE_PROJECT_ID,
-          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-          privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-        }),
-      });
-    }
-    
-    const message = {
-      notification: {
-        title: notification.title,
-        body: notification.body,
-      },
-      data: notification.data || {},
-      tokens: validTokens,
-    };
-    
-    return admin.messaging().sendMulticast(message);
-    */
   } catch (error) {
     console.error('Error sending multicast notification:', error);
     return {
@@ -140,13 +116,19 @@ exports.sendMulticastNotification = async (userFcmTokens, notification) => {
  */
 exports.sendStatusChangeNotification = async (incident, previousStatus, newStatus, changedBy) => {
   try {
-    // Get reporter's FCM token
+    // Get reporter's subscription
     const { User } = require('../models');
     const reporter = await User.findById(incident.reporter);
     
-    if (!reporter || !reporter.fcmToken) {
-      console.log('Reporter has no FCM token, skipping notification');
+    if (!reporter || !reporter.pushSubscription) {
+      console.log('Reporter has no push subscription, skipping notification');
       return;
+    }
+
+    // Parse subscription object if it's stored as a string
+    let subscription = reporter.pushSubscription;
+    if (typeof subscription === 'string') {
+      subscription = JSON.parse(subscription);
     }
 
     // Prepare notification
@@ -162,7 +144,7 @@ exports.sendStatusChangeNotification = async (incident, previousStatus, newStatu
     };
 
     // Send notification
-    return this.sendNotification(reporter.fcmToken, notification);
+    return this.sendNotification(subscription, notification);
   } catch (error) {
     console.error('Error sending status change notification:', error);
   }
@@ -176,13 +158,19 @@ exports.sendStatusChangeNotification = async (incident, previousStatus, newStatu
  */
 exports.sendVerificationNotification = async (incident, verifier) => {
   try {
-    // Get reporter's FCM token
+    // Get reporter's subscription
     const { User } = require('../models');
     const reporter = await User.findById(incident.reporter);
     
-    if (!reporter || !reporter.fcmToken) {
-      console.log('Reporter has no FCM token, skipping notification');
+    if (!reporter || !reporter.pushSubscription) {
+      console.log('Reporter has no push subscription, skipping notification');
       return;
+    }
+
+    // Parse subscription object if it's stored as a string
+    let subscription = reporter.pushSubscription;
+    if (typeof subscription === 'string') {
+      subscription = JSON.parse(subscription);
     }
 
     // Prepare notification
@@ -197,7 +185,7 @@ exports.sendVerificationNotification = async (incident, verifier) => {
     };
 
     // Send notification
-    return this.sendNotification(reporter.fcmToken, notification);
+    return this.sendNotification(subscription, notification);
   } catch (error) {
     console.error('Error sending verification notification:', error);
   }
@@ -210,13 +198,19 @@ exports.sendVerificationNotification = async (incident, verifier) => {
  */
 exports.sendVerificationThresholdNotification = async (incident) => {
   try {
-    // Get reporter's FCM token
+    // Get reporter's subscription
     const { User } = require('../models');
     const reporter = await User.findById(incident.reporter);
     
-    if (!reporter || !reporter.fcmToken) {
-      console.log('Reporter has no FCM token, skipping notification');
+    if (!reporter || !reporter.pushSubscription) {
+      console.log('Reporter has no push subscription, skipping notification');
       return;
+    }
+
+    // Parse subscription object if it's stored as a string
+    let subscription = reporter.pushSubscription;
+    if (typeof subscription === 'string') {
+      subscription = JSON.parse(subscription);
     }
 
     // Prepare notification
@@ -230,8 +224,16 @@ exports.sendVerificationThresholdNotification = async (incident) => {
     };
 
     // Send notification
-    return this.sendNotification(reporter.fcmToken, notification);
+    return this.sendNotification(subscription, notification);
   } catch (error) {
     console.error('Error sending verification threshold notification:', error);
   }
+};
+
+/**
+ * Get public VAPID key for clients
+ * @returns {String} - Public VAPID key
+ */
+exports.getPublicVapidKey = () => {
+  return vapidKeys.publicKey;
 }; 

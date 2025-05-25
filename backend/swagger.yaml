@@ -613,6 +613,10 @@ paths:
                   type: string
                   enum: [user, authority]
                   example: user
+                cnic:
+                  type: string
+                  description: 'User''s CNIC number (required for regular users, not for admins/authority)'
+                  example: '1234567890123'
                 location:
                   type: string
                   example: 'New York, NY'
@@ -636,12 +640,54 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-  /auth/login:
+  /auth/login/user:
     post:
       tags:
         - Auth
-      summary: 'Login user'
-      description: 'Authenticate a user with email and password'
+      summary: 'Login user with CNIC'
+      description: 'Login with CNIC for regular users'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - cnic
+                - password
+              properties:
+                cnic:
+                  type: string
+                  description: 'User''s CNIC number'
+                  example: '1234567890123'
+                password:
+                  type: string
+                  format: password
+                  description: 'User''s password'
+                  example: password123
+      responses:
+        '200':
+          description: 'User logged in successfully'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean, example: true}
+                  message: {type: string, example: 'User logged in successfully'}
+                  data: {type: object, properties: {user: {$ref: '#/components/schemas/User'}, token: {type: string, example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...}}}
+        '401':
+          description: 'Invalid credentials'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /auth/login/admin:
+    post:
+      tags:
+        - Auth
+      summary: 'Login admin with email'
+      description: 'Login with email for admins/authority'
       requestBody:
         required: true
         content:
@@ -655,14 +701,16 @@ paths:
                 email:
                   type: string
                   format: email
-                  example: john@example.com
+                  description: 'Admin''s email address'
+                  example: admin@example.com
                 password:
                   type: string
                   format: password
-                  example: Password123
+                  description: 'Admin''s password'
+                  example: password123
       responses:
         '200':
-          description: 'Login successful'
+          description: 'Admin logged in successfully'
           content:
             application/json:
               schema:
@@ -670,7 +718,44 @@ paths:
                 properties:
                   success: {type: boolean, example: true}
                   message: {type: string, example: 'User logged in successfully'}
-                  data: {type: object, properties: {user: {$ref: '#/components/schemas/User'}, token: {type: string}}}
+                  data: {type: object, properties: {user: {$ref: '#/components/schemas/User'}, token: {type: string, example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...}}}
+        '401':
+          description: 'Invalid credentials'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /auth/login:
+    post:
+      tags:
+        - Auth
+      summary: 'Login user (supports both CNIC and email)'
+      description: 'Login with either CNIC (for users) or email (for admins/authority) - Legacy endpoint'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                -
+                  type: object
+                  required: [cnic, password]
+                  properties: {cnic: {type: string, description: 'User''s CNIC number', example: '1234567890123'}, password: {type: string, format: password, description: 'User''s password', example: password123}}
+                -
+                  type: object
+                  required: [email, password]
+                  properties: {email: {type: string, format: email, description: 'User''s email address', example: admin@example.com}, password: {type: string, format: password, description: 'User''s password', example: password123}}
+      responses:
+        '200':
+          description: 'User logged in successfully'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean, example: true}
+                  message: {type: string, example: 'User logged in successfully'}
+                  data: {type: object, properties: {user: {$ref: '#/components/schemas/User'}, token: {type: string, example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...}}}
         '401':
           description: 'Invalid credentials'
           content:
@@ -749,220 +834,15 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-  /api/auth/register:
-    post:
-      tags:
-        - Authentication
-      summary: 'Register a new user'
-      description: 'Create a new user account with name, email, password, and CNIC (for regular users)'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - name
-                - email
-                - password
-                - confirmPassword
-              properties:
-                name:
-                  type: string
-                  description: 'User''s full name'
-                  example: 'John Doe'
-                email:
-                  type: string
-                  format: email
-                  description: 'User''s email address'
-                  example: john@example.com
-                cnic:
-                  type: string
-                  description: 'User''s CNIC number (required for regular users, not for admins/authority)'
-                  example: '1234567890123'
-                password:
-                  type: string
-                  format: password
-                  description: 'User''s password'
-                  example: password123
-                confirmPassword:
-                  type: string
-                  format: password
-                  description: 'Confirm password'
-                  example: password123
-                role:
-                  type: string
-                  enum: [user, authority]
-                  description: 'User role (defaults to ''user'')'
-                  example: user
-                location:
-                  type: string
-                  description: 'User''s location'
-                  example: 'Karachi, Pakistan'
-                bio:
-                  type: string
-                  description: 'User''s bio'
-                  example: 'Environmental enthusiast'
-                fcmToken:
-                  type: string
-                  description: 'Firebase Cloud Messaging token for push notifications'
-                  example: fcm-token-123456
-      responses:
-        '201':
-          description: 'User registered successfully'
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success: {type: boolean, example: true}
-                  message: {type: string, example: 'User registered successfully'}
-                  data: {type: object, properties: {user: {$ref: '#/components/schemas/User'}, token: {type: string, example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...}}}
-        '400':
-          description: 'Bad request'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-  /api/auth/login:
-    post:
-      tags:
-        - Authentication
-      summary: 'Login user (supports both CNIC and email)'
-      description: 'Login with either CNIC (for users) or email (for admins/authority)'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              oneOf:
-                -
-                  type: object
-                  required: [cnic, password]
-                  properties: {cnic: {type: string, description: 'User''s CNIC number', example: '1234567890123'}, password: {type: string, format: password, description: 'User''s password', example: password123}, fcmToken: {type: string, description: 'Firebase Cloud Messaging token for push notifications', example: fcm-token-123456}}
-                -
-                  type: object
-                  required: [email, password]
-                  properties: {email: {type: string, format: email, description: 'User''s email address', example: admin@example.com}, password: {type: string, format: password, description: 'User''s password', example: password123}, fcmToken: {type: string, description: 'Firebase Cloud Messaging token for push notifications', example: fcm-token-123456}}
-      responses:
-        '200':
-          description: 'User logged in successfully'
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success: {type: boolean, example: true}
-                  message: {type: string, example: 'User logged in successfully'}
-                  data: {type: object, properties: {user: {$ref: '#/components/schemas/User'}, token: {type: string, example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...}}}
-        '401':
-          description: 'Invalid credentials'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-  /api/auth/login/user:
-    post:
-      tags:
-        - Authentication
-      summary: 'Login user with CNIC'
-      description: 'Login with CNIC for regular users'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - cnic
-                - password
-              properties:
-                cnic:
-                  type: string
-                  description: 'User''s CNIC number'
-                  example: '1234567890123'
-                password:
-                  type: string
-                  format: password
-                  description: 'User''s password'
-                  example: password123
-                fcmToken:
-                  type: string
-                  description: 'Firebase Cloud Messaging token for push notifications'
-                  example: fcm-token-123456
-      responses:
-        '200':
-          description: 'User logged in successfully'
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success: {type: boolean, example: true}
-                  message: {type: string, example: 'User logged in successfully'}
-                  data: {type: object, properties: {user: {$ref: '#/components/schemas/User'}, token: {type: string, example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...}}}
-        '401':
-          description: 'Invalid credentials'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-  /api/auth/login/admin:
-    post:
-      tags:
-        - Authentication
-      summary: 'Login admin with email'
-      description: 'Login with email for admins/authority'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - email
-                - password
-              properties:
-                email:
-                  type: string
-                  format: email
-                  description: 'Admin''s email address'
-                  example: admin@example.com
-                password:
-                  type: string
-                  format: password
-                  description: 'Admin''s password'
-                  example: password123
-                fcmToken:
-                  type: string
-                  description: 'Firebase Cloud Messaging token for push notifications'
-                  example: fcm-token-123456
-      responses:
-        '200':
-          description: 'Admin logged in successfully'
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success: {type: boolean, example: true}
-                  message: {type: string, example: 'User logged in successfully'}
-                  data: {type: object, properties: {user: {$ref: '#/components/schemas/User'}, token: {type: string, example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...}}}
-        '401':
-          description: 'Invalid credentials'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-  /api/auth/fcm-token:
+  /auth/push-subscription:
     put:
       tags:
-        - Authentication
-      summary: 'Update FCM token'
-      description: 'Update the Firebase Cloud Messaging token for push notifications'
+        - Auth
+      summary: 'Update Push Subscription'
+      description: 'Update the Web Push subscription for notifications'
       security:
         -
-          bearerAuth: []
+          BearerAuth: []
       requestBody:
         required: true
         content:
@@ -970,29 +850,64 @@ paths:
             schema:
               type: object
               required:
-                - fcmToken
+                - endpoint
+                - keys
               properties:
-                fcmToken:
+                endpoint:
                   type: string
-                  description: 'Firebase Cloud Messaging token'
-                  example: fcm-token-123456
+                  description: 'Push subscription endpoint URL'
+                  example: 'https://fcm.googleapis.com/fcm/send/example-endpoint'
+                expirationTime:
+                  type: number
+                  description: 'Optional expiration time'
+                  example: null
+                keys:
+                  type: object
+                  required:
+                    - p256dh
+                    - auth
+                  properties:
+                    p256dh:
+                      type: string
+                      description: 'P256DH key'
+                      example: 'BNcRdreALRFXTkOOUHK1EtK2wtaz5Ry4YfYCA_0QTpQtUbVlUls0VJXg7A8u-Ts1XbjhazAkj7I99e8QcYP7DkM'
+                    auth:
+                      type: string
+                      description: 'Auth secret'
+                      example: 'Q2BoAjC09xH3ywDLNJr-dA'
       responses:
         '200':
-          description: 'FCM token updated successfully'
+          description: 'Push subscription updated successfully'
           content:
             application/json:
               schema:
                 type: object
                 properties:
                   success: {type: boolean, example: true}
-                  message: {type: string, example: 'FCM token updated successfully'}
-                  data: {type: object, properties: {fcmToken: {type: string, example: fcm-token-123456}}}
+                  message: {type: string, example: 'Push subscription updated successfully'}
+                  data: {type: object, properties: {pushSubscription: {type: object}}}
         '401':
           description: 'Not authorized'
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  /auth/vapid-public-key:
+    get:
+      tags:
+        - Auth
+      summary: 'Get VAPID Public Key'
+      description: 'Get the VAPID public key for web push subscriptions'
+      responses:
+        '200':
+          description: 'VAPID public key'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean, example: true}
+                  vapidPublicKey: {type: string, example: 'BDd3_hVL9fZi9Ybo2UUzA284WG5FZR30_95YeZJsiApwXKpNcF1rRTF8DoIa8hqdiWf-YBlrRj2scTdDmL7cJJc'}
   /incidents:
     get:
       tags:

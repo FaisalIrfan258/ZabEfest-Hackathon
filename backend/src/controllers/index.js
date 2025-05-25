@@ -3,6 +3,7 @@ const incidentController = require('./incident.controller');
 const commentController = require('./comment.controller');
 const dashboardController = require('./dashboard.controller');
 const eventController = require('./event.controller');
+const notificationController = require('./notification.controller');
 
 module.exports = {
   auth: authController,
@@ -10,4 +11,5 @@ module.exports = {
   comment: commentController,
   dashboard: dashboardController,
   event: eventController,
+  notification: notificationController,
 }; 

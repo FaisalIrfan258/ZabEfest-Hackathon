@@ -1,6 +1,31 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
+// Schema for push subscription
+const pushSubscriptionSchema = new mongoose.Schema(
+  {
+    endpoint: {
+      type: String,
+      required: true,
+    },
+    expirationTime: {
+      type: Number,
+      default: null,
+    },
+    keys: {
+      p256dh: {
+        type: String,
+        required: true,
+      },
+      auth: {
+        type: String,
+        required: true,
+      },
+    },
+  },
+  { _id: false }
+);
+
 const userSchema = new mongoose.Schema(
   {
     name: {
@@ -83,9 +108,27 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
-    fcmToken: {
-      type: String,
+    pushSubscription: {
+      type: pushSubscriptionSchema,
       default: null,
+    },
+    notificationSettings: {
+      statusUpdates: {
+        type: Boolean,
+        default: true,
+      },
+      verifications: {
+        type: Boolean,
+        default: true,
+      },
+      followedIncidents: {
+        type: Boolean,
+        default: true,
+      },
+      systemAnnouncements: {
+        type: Boolean,
+        default: true,
+      },
     },
   },
   { timestamps: true }

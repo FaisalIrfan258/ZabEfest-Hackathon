@@ -51,6 +51,11 @@
             max-height: 300px;
             overflow-y: auto;
         }
+        #subscription-json {
+            max-height: 200px;
+            overflow-y: auto;
+            word-break: break-all;
+        }
     </style>
 </head>
 <body>
@@ -64,21 +69,35 @@
     </div>
     
     <div class="container">
-        <h2>Step 2: Register for FCM</h2>
-        <p>Once permission is granted, register for Firebase Cloud Messaging:</p>
-        <button id="registerFCM" disabled>Register for FCM</button>
-        <p>FCM Token: <span id="fcmToken">Not registered</span></p>
-        <button id="copyToken" disabled>Copy Token</button>
+        <h2>Step 2: Subscribe to Web Push</h2>
+        <p>Once permission is granted, subscribe to Web Push notifications:</p>
+        <button id="subscribe" disabled>Subscribe to Notifications</button>
+        <button id="unsubscribe" disabled>Unsubscribe</button>
+        <div class="mt-3">
+            <p>Subscription details:</p>
+            <pre id="subscription-json">No subscription available</pre>
+        </div>
     </div>
     
     <div class="container">
-        <h2>Step 3: Update Your FCM Token</h2>
-        <p>Send your FCM token to the server when you log in or by using the dedicated endpoint:</p>
-        <pre>PUT /api/auth/fcm-token
+        <h2>Step 3: Update Your Push Subscription</h2>
+        <p>Send your push subscription to the server using the dedicated endpoint:</p>
+        <pre>PUT /api/auth/push-subscription
 {
-  "fcmToken": "your-fcm-token-here"
+  "endpoint": "https://example.com/push-service",
+  "expirationTime": null,
+  "keys": {
+    "p256dh": "base64-encoded-key",
+    "auth": "base64-encoded-auth"
+  }
 }</pre>
         <p>This will enable the server to send you notifications about your incidents.</p>
+    </div>
+    
+    <div class="container">
+        <h2>Step 4: Test Notification</h2>
+        <p>Send a test notification to this browser:</p>
+        <button id="test-btn" disabled>Send Test Notification</button>
     </div>
     
     <div class="container">
@@ -87,9 +106,35 @@
     </div>
 
     <script>
+        // Variables
+        let swRegistration = null;
+        let isSubscribed = false;
+        let authToken = localStorage.getItem('token');
+        
         // Check notification permission on page load
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             updatePermissionStatus();
+            
+            // Check if service worker is supported
+            if ('serviceWorker' in navigator && 'PushManager' in window) {
+                try {
+                    // Check if service worker is already registered
+                    const registration = await navigator.serviceWorker.getRegistration();
+                    
+                    if (registration) {
+                        swRegistration = registration;
+                        console.log('Service worker already registered');
+                        
+                        // Update subscription status
+                        updateSubscriptionStatus();
+                    }
+                } catch (error) {
+                    console.error('Error checking service worker:', error);
+                }
+            } else {
+                document.getElementById('subscribe').disabled = true;
+                console.log('Service Worker or Push API not supported');
+            }
         });
 
         // Update permission status display
@@ -97,9 +142,9 @@
             const permissionStatus = document.getElementById('permissionStatus');
             permissionStatus.textContent = Notification.permission;
             
-            // Enable/disable FCM button based on permission
-            const registerFCMButton = document.getElementById('registerFCM');
-            registerFCMButton.disabled = Notification.permission !== 'granted';
+            // Enable/disable subscribe button based on permission
+            const subscribeButton = document.getElementById('subscribe');
+            subscribeButton.disabled = Notification.permission !== 'granted';
         }
 
         // Request notification permission
@@ -109,6 +154,15 @@
                 updatePermissionStatus();
                 
                 if (permission === 'granted') {
+                    // Register service worker if not already registered
+                    if (!swRegistration && 'serviceWorker' in navigator) {
+                        swRegistration = await navigator.serviceWorker.register('/sw.js');
+                        console.log('Service worker registered');
+                        
+                        // Update subscription status
+                        updateSubscriptionStatus();
+                    }
+                    
                     // Show a test notification
                     new Notification('EcoTracker Notifications Enabled', {
                         body: 'You will now receive notifications about your incidents',
@@ -121,36 +175,212 @@
             }
         });
 
-        // Simulate FCM registration
-        document.getElementById('registerFCM').addEventListener('click', () => {
-            // In a real app, this would use the Firebase JS SDK
-            // For this demo, we'll generate a fake token
-            const mockFcmToken = 'fcm-' + Math.random().toString(36).substring(2, 15) + 
-                Math.random().toString(36).substring(2, 15);
+        // Convert URL-safe base64 string to Uint8Array
+        function urlBase64ToUint8Array(base64String) {
+            const padding = '='.repeat((4 - base64String.length % 4) % 4);
+            const base64 = (base64String + padding)
+                .replace(/-/g, '+')
+                .replace(/_/g, '/');
             
-            document.getElementById('fcmToken').textContent = mockFcmToken;
-            document.getElementById('copyToken').disabled = false;
+            const rawData = window.atob(base64);
+            const outputArray = new Uint8Array(rawData.length);
             
-            // Add a notification
-            addNotification('FCM Registration', 'Successfully registered for push notifications');
+            for (let i = 0; i < rawData.length; ++i) {
+                outputArray[i] = rawData.charCodeAt(i);
+            }
+            
+            return outputArray;
+        }
+        
+        // Get VAPID public key from server
+        async function getVapidPublicKey() {
+            try {
+                const response = await fetch('/api/notifications/vapid-public-key');
+                const data = await response.json();
+                
+                if (!data.success || !data.vapidPublicKey) {
+                    throw new Error('Failed to get VAPID public key');
+                }
+                
+                return data.vapidPublicKey;
+            } catch (error) {
+                console.error('Error getting VAPID public key:', error);
+                throw error;
+            }
+        }
+
+        // Subscribe to push notifications
+        document.getElementById('subscribe').addEventListener('click', async () => {
+            try {
+                if (!swRegistration) {
+                    swRegistration = await navigator.serviceWorker.register('/sw.js');
+                }
+                
+                // Get VAPID public key
+                const vapidPublicKey = await getVapidPublicKey();
+                
+                // Convert key to Uint8Array
+                const applicationServerKey = urlBase64ToUint8Array(vapidPublicKey);
+                
+                // Subscribe
+                const subscription = await swRegistration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey
+                });
+                
+                // Update UI
+                isSubscribed = true;
+                document.getElementById('subscribe').disabled = true;
+                document.getElementById('unsubscribe').disabled = false;
+                document.getElementById('test-btn').disabled = !authToken;
+                
+                // Display subscription
+                document.getElementById('subscription-json').textContent = 
+                    JSON.stringify(subscription, null, 2);
+                
+                // Send subscription to server if authenticated
+                if (authToken) {
+                    await sendSubscriptionToServer(subscription);
+                } else {
+                    alert('You are not logged in. To receive notifications from the server, please log in and update your subscription.');
+                }
+                
+                // Add a notification
+                addNotification('Push Subscription', 'Successfully subscribed to push notifications');
+            } catch (error) {
+                console.error('Error subscribing to push notifications:', error);
+                alert('Error subscribing to push notifications: ' + error.message);
+            }
         });
 
-        // Copy FCM token to clipboard
-        document.getElementById('copyToken').addEventListener('click', () => {
-            const token = document.getElementById('fcmToken').textContent;
-            navigator.clipboard.writeText(token)
-                .then(() => {
-                    alert('Token copied to clipboard!');
-                })
-                .catch(err => {
-                    console.error('Failed to copy token: ', err);
-                    alert('Failed to copy token: ' + err.message);
-                });
+        // Unsubscribe from push notifications
+        document.getElementById('unsubscribe').addEventListener('click', async () => {
+            try {
+                if (!swRegistration) {
+                    return;
+                }
+                
+                const subscription = await swRegistration.pushManager.getSubscription();
+                
+                if (!subscription) {
+                    alert('No active subscription to unsubscribe from');
+                    return;
+                }
+                
+                // Unsubscribe
+                const success = await subscription.unsubscribe();
+                
+                if (success) {
+                    // Update UI
+                    isSubscribed = false;
+                    document.getElementById('subscribe').disabled = Notification.permission !== 'granted';
+                    document.getElementById('unsubscribe').disabled = true;
+                    document.getElementById('test-btn').disabled = true;
+                    document.getElementById('subscription-json').textContent = 'No subscription available';
+                    
+                    addNotification('Unsubscribed', 'Successfully unsubscribed from push notifications');
+                }
+            } catch (error) {
+                console.error('Error unsubscribing from push notifications:', error);
+                alert('Error unsubscribing: ' + error.message);
+            }
         });
+
+        // Send subscription to server
+        async function sendSubscriptionToServer(subscription) {
+            try {
+                const response = await fetch('/api/auth/push-subscription', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(subscription)
+                });
+                
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error(data.message || 'Failed to update subscription');
+                }
+                
+                addNotification('Subscription Updated', 'Your push subscription has been sent to the server');
+                return data;
+            } catch (error) {
+                console.error('Error sending subscription to server:', error);
+                alert('Error sending subscription to server: ' + error.message);
+            }
+        }
+        
+        // Send test notification
+        document.getElementById('test-btn').addEventListener('click', async () => {
+            try {
+                if (!authToken) {
+                    alert('Please log in to send test notifications');
+                    return;
+                }
+                
+                const response = await fetch('/api/notifications/test', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error(data.message || 'Failed to send test notification');
+                }
+                
+                addNotification('Test Sent', 'Test notification sent successfully');
+            } catch (error) {
+                console.error('Error sending test notification:', error);
+                alert('Error sending test notification: ' + error.message);
+            }
+        });
+        
+        // Update subscription status
+        async function updateSubscriptionStatus() {
+            try {
+                if (!swRegistration) {
+                    return;
+                }
+                
+                const subscription = await swRegistration.pushManager.getSubscription();
+                
+                if (subscription) {
+                    // Update UI for subscribed state
+                    isSubscribed = true;
+                    document.getElementById('subscribe').disabled = true;
+                    document.getElementById('unsubscribe').disabled = false;
+                    document.getElementById('test-btn').disabled = !authToken;
+                    document.getElementById('subscription-json').textContent = 
+                        JSON.stringify(subscription, null, 2);
+                } else {
+                    // Update UI for unsubscribed state
+                    isSubscribed = false;
+                    document.getElementById('subscribe').disabled = Notification.permission !== 'granted';
+                    document.getElementById('unsubscribe').disabled = true;
+                    document.getElementById('test-btn').disabled = true;
+                    document.getElementById('subscription-json').textContent = 'No subscription available';
+                }
+            } catch (error) {
+                console.error('Error checking subscription status:', error);
+            }
+        }
 
         // Add a notification to the list
         function addNotification(title, body) {
             const notifications = document.getElementById('notifications');
+            
+            // Remove 'no notifications' message if it exists
+            const noNotificationsMsg = notifications.querySelector('.text-muted');
+            if (noNotificationsMsg) {
+                notifications.removeChild(noNotificationsMsg);
+            }
+            
             const notification = document.createElement('div');
             notification.className = 'notification';
             notification.innerHTML = `
@@ -160,54 +390,6 @@
             `;
             notifications.prepend(notification);
         }
-
-        // In a real app, you would set up a Firebase messaging listener like this:
-        /*
-        // Initialize Firebase
-        firebase.initializeApp({
-            apiKey: "your-api-key",
-            authDomain: "your-auth-domain",
-            projectId: "your-project-id",
-            messagingSenderId: "your-sender-id",
-            appId: "your-app-id"
-        });
-
-        // Get Firebase Messaging instance
-        const messaging = firebase.messaging();
-
-        // Request permission and get token
-        messaging.getToken({ vapidKey: 'your-vapid-key' })
-            .then((currentToken) => {
-                if (currentToken) {
-                    // Show token
-                    document.getElementById('fcmToken').textContent = currentToken;
-                    document.getElementById('copyToken').disabled = false;
-                    
-                    // Send token to server
-                    sendTokenToServer(currentToken);
-                } else {
-                    console.log('No registration token available');
-                }
-            })
-            .catch((err) => {
-                console.log('An error occurred while retrieving token. ', err);
-            });
-
-        // Handle incoming messages
-        messaging.onMessage((payload) => {
-            console.log('Message received. ', payload);
-            addNotification(
-                payload.notification.title, 
-                payload.notification.body
-            );
-            
-            // Show notification if app is in foreground
-            new Notification(payload.notification.title, {
-                body: payload.notification.body,
-                icon: '/favicon.ico'
-            });
-        });
-        */
     </script>
 </body>
 </html> 

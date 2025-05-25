@@ -24,7 +24,6 @@ exports.registerValidator = Joi.object({
 exports.userLoginValidator = Joi.object({
   cnic: Joi.string().trim().pattern(/^[0-9]{13}$/).required(),
   password: Joi.string().required(),
-  fcmToken: Joi.string().allow('', null),
 });
 
 /**
@@ -33,7 +32,6 @@ exports.userLoginValidator = Joi.object({
 exports.adminLoginValidator = Joi.object({
   email: Joi.string().email().required(),
   password: Joi.string().required(),
-  fcmToken: Joi.string().allow('', null),
 });
 
 /**
@@ -45,10 +43,15 @@ exports.loginValidator = Joi.alternatives().try(
 );
 
 /**
- * Update FCM token validation
+ * Push subscription validation
  */
-exports.fcmTokenValidator = Joi.object({
-  fcmToken: Joi.string().required(),
+exports.pushSubscriptionValidator = Joi.object({
+  endpoint: Joi.string().uri().required(),
+  expirationTime: Joi.number().allow(null),
+  keys: Joi.object({
+    p256dh: Joi.string().required(),
+    auth: Joi.string().required()
+  }).required()
 });
 
 /**

@@ -46,8 +46,7 @@ exports.register = async (req, res, next) => {
       role: role === 'authority' ? 'authority' : 'user', // Only allow 'user' or 'authority'
       location,
       bio,
-      cnic,
-      fcmToken: req.body.fcmToken || null,
+      cnic
     });
 
     // Generate JWT
@@ -74,7 +73,7 @@ exports.register = async (req, res, next) => {
  */
 exports.login = async (req, res, next) => {
   try {
-    const { email, cnic, password, fcmToken } = req.body;
+    const { email, cnic, password } = req.body;
     let user;
 
     // Check if login is using CNIC (for regular users)
@@ -118,11 +117,6 @@ exports.login = async (req, res, next) => {
         success: false,
         message: 'Your account has been deactivated',
       });
-    }
-
-    // Update FCM token if provided
-    if (fcmToken) {
-      user.fcmToken = fcmToken;
     }
 
     // Update last active
@@ -266,27 +260,46 @@ exports.uploadProfilePicture = async (req, res, next) => {
 };
 
 /**
- * @desc    Update FCM token
- * @route   PUT /api/auth/fcm-token
+ * @desc    Update push subscription
+ * @route   PUT /api/auth/push-subscription
  * @access  Private
  */
-exports.updateFcmToken = async (req, res, next) => {
+exports.updatePushSubscription = async (req, res, next) => {
   try {
-    const { fcmToken } = req.body;
+    // Get subscription object from request body
+    const pushSubscription = req.body;
 
-    // Update user's FCM token
+    // Update user's push subscription
     const user = await User.findByIdAndUpdate(
       req.user._id,
-      { fcmToken },
+      { pushSubscription },
       { new: true, runValidators: true }
     );
 
     res.status(200).json({
       success: true,
-      message: 'FCM token updated successfully',
+      message: 'Push subscription updated successfully',
       data: {
-        fcmToken: user.fcmToken
+        pushSubscription: user.pushSubscription
       }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Get VAPID public key
+ * @route   GET /api/auth/vapid-public-key
+ * @access  Public
+ */
+exports.getVapidPublicKey = async (req, res, next) => {
+  try {
+    const { getPublicVapidKey } = require('../utils/notification.util');
+    
+    res.status(200).json({
+      success: true,
+      vapidPublicKey: getPublicVapidKey()
     });
   } catch (error) {
     next(error);

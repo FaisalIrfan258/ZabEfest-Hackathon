@@ -66,11 +66,17 @@ router.put(
 );
 
 router.put(
-  '/fcm-token',
+  '/push-subscription',
   auth.protect,
   auth.updateLastActive,
-  validator.validateRequest(validator.fcmTokenValidator),
-  authController.updateFcmToken
+  validator.validateRequest(validator.pushSubscriptionValidator),
+  authController.updatePushSubscription
+);
+
+// Get VAPID public key
+router.get(
+  '/vapid-public-key',
+  authController.getVapidPublicKey
 );
 
 module.exports = router; 

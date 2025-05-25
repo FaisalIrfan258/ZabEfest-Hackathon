@@ -422,13 +422,46 @@ exports.updateStatus = async (req, res, next) => {
 
     await incident.save();
 
-    // Send notification about status change
+    // Send notification to reporter about status change
     await notification.sendStatusChangeNotification(
       incident,
       previousStatus,
       status,
       req.user._id
     );
+
+    // Send notifications to all followers of the incident
+    if (incident.followers && incident.followers.length > 0) {
+      try {
+        // Get push subscriptions of all followers
+        const followers = await User.find({
+          _id: { $in: incident.followers },
+          pushSubscription: { $ne: null }
+        }).select('pushSubscription');
+        
+        const followerSubscriptions = followers.map(follower => follower.pushSubscription);
+        
+        if (followerSubscriptions.length > 0) {
+          // Prepare notification for followers
+          const followerNotification = {
+            title: 'Incident Status Updated',
+            body: `Incident "${incident.title}" has been updated from ${previousStatus} to ${status}`,
+            data: {
+              incidentId: incident._id.toString(),
+              type: 'status_change_followed',
+              previousStatus,
+              newStatus: status,
+            },
+          };
+          
+          // Send multicast notification to all followers
+          await notification.sendMulticastNotification(followerSubscriptions, followerNotification);
+        }
+      } catch (error) {
+        // Don't fail the main operation if follower notifications fail
+        console.error('Error sending follower notifications:', error);
+      }
+    }
 
     // Populate response data
     const updatedIncident = await Incident.findById(req.params.id)
