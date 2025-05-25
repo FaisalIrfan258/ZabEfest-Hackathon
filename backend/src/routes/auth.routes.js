@@ -33,6 +33,26 @@ router.post(
   authController.login
 );
 
+// Forgot password routes
+router.post(
+  '/forgot-password/admin',
+  validator.validateRequest(validator.adminForgotPasswordValidator),
+  authController.forgotPasswordAdmin
+);
+
+router.post(
+  '/forgot-password/user',
+  validator.validateRequest(validator.userForgotPasswordValidator),
+  authController.forgotPasswordUser
+);
+
+// Reset password
+router.post(
+  '/reset-password/:token',
+  validator.validateRequest(validator.resetPasswordValidator),
+  authController.resetPassword
+);
+
 // Protected routes
 router.get(
   '/me',

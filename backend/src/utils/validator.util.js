@@ -43,6 +43,29 @@ exports.loginValidator = Joi.alternatives().try(
 );
 
 /**
+ * Admin forgot password validation
+ */
+exports.adminForgotPasswordValidator = Joi.object({
+  email: Joi.string().email().required(),
+});
+
+/**
+ * User forgot password validation
+ */
+exports.userForgotPasswordValidator = Joi.object({
+  cnic: Joi.string().trim().pattern(/^[0-9]{13}$/).required(),
+});
+
+/**
+ * Reset password validation
+ */
+exports.resetPasswordValidator = Joi.object({
+  password: Joi.string().min(6).max(30).required(),
+  confirmPassword: Joi.string().valid(Joi.ref('password')).required(),
+  token: Joi.string().required(),
+});
+
+/**
  * Push subscription validation
  */
 exports.pushSubscriptionValidator = Joi.object({

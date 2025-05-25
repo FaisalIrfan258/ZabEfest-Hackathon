@@ -1,5 +1,6 @@
 const { User } = require('../models');
-const { token } = require('../utils');
+const { token, email } = require('../utils');
+const crypto = require('crypto');
 
 /**
  * @desc    Register new user
@@ -300,6 +301,188 @@ exports.getVapidPublicKey = async (req, res, next) => {
     res.status(200).json({
       success: true,
       vapidPublicKey: getPublicVapidKey()
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Forgot password for admin (email-based)
+ * @route   POST /api/auth/forgot-password/admin
+ * @access  Public
+ */
+exports.forgotPasswordAdmin = async (req, res, next) => {
+  try {
+    const { email: userEmail } = req.body;
+
+    // Find user by email
+    const user = await User.findOne({ email: userEmail });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found with this email',
+      });
+    }
+
+    // Check if user is admin or authority
+    if (user.role !== 'admin' && user.role !== 'authority') {
+      return res.status(403).json({
+        success: false,
+        message: 'Only admin or authority users can use this endpoint',
+      });
+    }
+
+    // Generate reset token
+    const resetToken = crypto.randomBytes(20).toString('hex');
+
+    // Hash token and set to resetPasswordToken field
+    user.resetPasswordToken = crypto
+      .createHash('sha256')
+      .update(resetToken)
+      .digest('hex');
+
+    // Set expire time (1 hour)
+    user.resetPasswordExpire = Date.now() + 60 * 60 * 1000;
+
+    // Save user
+    await user.save({ validateBeforeSave: false });
+
+    try {
+      // Send email
+      await email.sendPasswordResetEmail(user.email, resetToken, user.name);
+
+      res.status(200).json({
+        success: true,
+        message: 'Password reset email sent',
+      });
+    } catch (err) {
+      // If email fails, remove token
+      user.resetPasswordToken = undefined;
+      user.resetPasswordExpire = undefined;
+      await user.save({ validateBeforeSave: false });
+
+      return res.status(500).json({
+        success: false,
+        message: 'Email could not be sent',
+      });
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Forgot password for user (CNIC-based)
+ * @route   POST /api/auth/forgot-password/user
+ * @access  Public
+ */
+exports.forgotPasswordUser = async (req, res, next) => {
+  try {
+    const { cnic } = req.body;
+
+    // Find user by CNIC
+    const user = await User.findOne({ cnic });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found with this CNIC',
+      });
+    }
+
+    // Check if user role is actually 'user'
+    if (user.role !== 'user') {
+      return res.status(403).json({
+        success: false,
+        message: 'This endpoint is only for regular users',
+      });
+    }
+
+    // Generate reset token
+    const resetToken = crypto.randomBytes(20).toString('hex');
+
+    // Hash token and set to resetPasswordToken field
+    user.resetPasswordToken = crypto
+      .createHash('sha256')
+      .update(resetToken)
+      .digest('hex');
+
+    // Set expire time (1 hour)
+    user.resetPasswordExpire = Date.now() + 60 * 60 * 1000;
+
+    // Save user
+    await user.save({ validateBeforeSave: false });
+
+    try {
+      // Send email
+      await email.sendPasswordResetEmail(user.email, resetToken, user.name);
+
+      res.status(200).json({
+        success: true,
+        message: 'Password reset email sent',
+      });
+    } catch (err) {
+      // If email fails, remove token
+      user.resetPasswordToken = undefined;
+      user.resetPasswordExpire = undefined;
+      await user.save({ validateBeforeSave: false });
+
+      return res.status(500).json({
+        success: false,
+        message: 'Email could not be sent',
+      });
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Reset password
+ * @route   POST /api/auth/reset-password/:token
+ * @access  Public
+ */
+exports.resetPassword = async (req, res, next) => {
+  try {
+    const { password } = req.body;
+    const { token: resetToken } = req.params;
+
+    // Hash token
+    const resetPasswordToken = crypto
+      .createHash('sha256')
+      .update(resetToken)
+      .digest('hex');
+
+    // Find user by token and check if token is still valid
+    const user = await User.findOne({
+      resetPasswordToken,
+      resetPasswordExpire: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or expired token',
+      });
+    }
+
+    // Set new password
+    user.password = password;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+    await user.save();
+
+    // Send success email
+    try {
+      await email.sendPasswordResetSuccessEmail(user.email, user.name);
+    } catch (err) {
+      // Continue even if email fails, just log it
+      console.error('Error sending password reset success email:', err);
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Password updated successfully',
     });
   } catch (error) {
     next(error);

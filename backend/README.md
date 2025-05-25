@@ -133,6 +133,16 @@ The Swagger documentation is generated from individual JSON files in the `script
    VAPID_PUBLIC_KEY=your_vapid_public_key
    VAPID_PRIVATE_KEY=your_vapid_private_key
    VAPID_SUBJECT=mailto:contact@ecotracker.com
+
+   # Email Configuration
+   EMAIL_HOST=smtp.example.com
+   EMAIL_PORT=587
+   EMAIL_SECURE=false
+   EMAIL_USER=your-email@example.com
+   EMAIL_PASSWORD=your-email-password
+   EMAIL_FROM=no-reply@yourapp.com
+   EMAIL_FROM_NAME=Your App Name
+   FRONTEND_URL=http://localhost:3000
    ```
 
 4. Start the development server
@@ -145,3 +155,23 @@ The Swagger documentation is generated from individual JSON files in the `script
 
 ## License
 This project is licensed under the ISC License. 
+
+## Email Configuration for Password Reset
+
+To enable the password reset functionality, you need to configure the following environment variables in your `.env` file:
+
+You can use services like Gmail, SendGrid, Mailgun, or any other SMTP provider. For development purposes, you can use [Mailtrap](https://mailtrap.io/) which provides a free testing inbox.
+
+### Gmail Example
+
+If you're using Gmail, use these settings:
+
+```
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_SECURE=false
+EMAIL_USER=your-gmail@gmail.com
+EMAIL_PASSWORD=your-app-password
+```
+
+Note: For Gmail, you'll need to use an "App Password" instead of your regular password. You can generate one in your Google Account settings under Security > App passwords. 
