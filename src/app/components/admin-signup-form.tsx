@@ -274,11 +274,6 @@ export default function AdminSignupForm() {
                 Login here
               </Link>
             </div>
-            <div className="pt-2 border-t border-gray-200 text-center">
-              <Link href="/signup" className="text-gray-500 hover:text-gray-700 underline text-xs">
-                Register as User Instead
-              </Link>
-            </div>
           </CardFooter>
         </form>
       </Card>
